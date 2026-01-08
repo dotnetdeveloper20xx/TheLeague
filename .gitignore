@@ -1,0 +1,44 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.dll
+*.exe
+*.pdb
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Angular
+the-league-client/dist/
+the-league-client/.angular/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+
+# Environment
+.env
+.env.local
+.env.*.local
+appsettings.Development.json
