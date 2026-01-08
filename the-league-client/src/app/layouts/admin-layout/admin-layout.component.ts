@@ -14,17 +14,25 @@ interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="min-h-screen bg-gray-100">
+    <div class="min-h-screen bg-particles">
+      <!-- Animated background orbs -->
+      <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div class="absolute top-20 left-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: -5s;"></div>
+      </div>
+
       <!-- Sidebar -->
       <aside
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300 lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 w-64 glass-dark transform transition-transform duration-300 lg:translate-x-0"
         [class.-translate-x-full]="!sidebarOpen()"
       >
         <!-- Logo -->
-        <div class="flex items-center h-16 px-6 bg-gray-800">
-          <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+        <div class="flex items-center h-16 px-6 border-b border-white/10">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
           <span class="ml-3 text-xl font-bold text-white">The League</span>
         </div>
 
@@ -33,9 +41,9 @@ interface NavItem {
           @for (item of navItems; track item.route) {
             <a
               [routerLink]="item.route"
-              routerLinkActive="bg-gray-800 text-white"
+              routerLinkActive="bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg"
               [routerLinkActiveOptions]="{ exact: item.route === '/admin' || item.route === '/club' }"
-              class="flex items-center px-4 py-3 mb-1 text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors"
+              class="flex items-center px-4 py-3 mb-1 text-gray-300 rounded-lg hover:bg-white/10 hover:text-white transition-all duration-200 hover:translate-x-1"
             >
               <span [innerHTML]="item.icon" class="w-5 h-5"></span>
               <span class="ml-3">{{ item.label }}</span>
@@ -77,7 +85,7 @@ interface NavItem {
       <!-- Main content -->
       <div class="lg:ml-64">
         <!-- Top bar -->
-        <header class="sticky top-0 z-30 bg-white shadow-sm">
+        <header class="sticky top-0 z-30 glass-nav shadow-sm">
           <div class="flex items-center justify-between h-16 px-4 sm:px-6">
             <button
               (click)="sidebarOpen.set(true)"

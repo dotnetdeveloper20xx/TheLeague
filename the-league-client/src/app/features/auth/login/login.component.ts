@@ -11,13 +11,20 @@ import { LoadingSpinnerComponent } from '../../../shared/components';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, LoadingSpinnerComponent],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-md w-full">
-        <div class="bg-white rounded-2xl shadow-xl p-8">
+    <div class="min-h-screen bg-aurora flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <!-- Floating orbs -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" style="animation-delay: -3s;"></div>
+        <div class="absolute top-1/2 left-1/4 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay: -7s;"></div>
+      </div>
+
+      <div class="max-w-md w-full relative z-10">
+        <div class="glass-card p-8 fade-in-scale">
           <!-- Logo and Title -->
           <div class="text-center mb-8">
-            <div class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mx-auto w-16 h-16 bg-gradient-to-br from-primary-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg hover-scale cursor-pointer">
+              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
@@ -33,7 +40,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components';
                 type="email"
                 id="email"
                 formControlName="email"
-                class="form-input"
+                class="input-enhanced input-focus-glow"
                 placeholder="you@example.com"
                 [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
               />
@@ -49,7 +56,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components';
                   [type]="showPassword ? 'text' : 'password'"
                   id="password"
                   formControlName="password"
-                  class="form-input pr-10"
+                  class="input-enhanced input-focus-glow pr-10"
                   placeholder="Enter your password"
                   [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
                 />
@@ -88,7 +95,7 @@ import { LoadingSpinnerComponent } from '../../../shared/components';
             <button
               type="submit"
               [disabled]="loginForm.invalid || isLoading"
-              class="w-full btn-primary py-3 flex items-center justify-center"
+              class="w-full gradient-btn text-white py-3 rounded-lg font-medium flex items-center justify-center hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (isLoading) {
                 <app-loading-spinner size="sm" containerClass="mr-2"></app-loading-spinner>
