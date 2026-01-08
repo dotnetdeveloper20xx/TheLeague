@@ -231,9 +231,21 @@ public class DatabaseSeeder
         var venues = CreateVenues(clubId, clubType);
         _context.Venues.AddRange(venues);
 
-        // Create members with memberships and payments
+        // Save membership types and venues first (needed for foreign keys)
+        await _context.SaveChangesAsync();
+
+        // Create members (just the member records)
         var members = await CreateMembersAsync(clubId, clubSlug, membershipTypes);
         _context.Members.AddRange(members);
+
+        // Save members first (needed for foreign keys in family members, memberships, bookings, etc.)
+        await _context.SaveChangesAsync();
+
+        // Create memberships and family members (after members are saved)
+        CreateMembershipsAndFamilyMembers(clubId, members, membershipTypes);
+
+        // Save memberships and family members
+        await _context.SaveChangesAsync();
 
         // Create sessions
         var sessions = CreateSessions(clubId, venues, clubType);
@@ -247,12 +259,21 @@ public class DatabaseSeeder
         var events = CreateEvents(clubId, venues, clubType);
         _context.Events.AddRange(events);
 
+        // Save sessions and events first (needed for bookings and tickets)
+        await _context.SaveChangesAsync();
+
         // Create bookings
         CreateBookings(members, sessions);
+
+        // Create event tickets (after events and members are saved)
+        CreateEventTickets(clubId, events, members);
 
         // Create payments
         var payments = CreatePayments(clubId, members, membershipTypes);
         _context.Payments.AddRange(payments);
+
+        // Save bookings, tickets, and payments
+        await _context.SaveChangesAsync();
     }
 
     private List<MembershipType> CreateMembershipTypes(Guid clubId)
@@ -440,6 +461,19 @@ public class DatabaseSeeder
             }
 
             members.Add(member);
+        }
+
+        return members;
+    }
+
+    private void CreateMembershipsAndFamilyMembers(Guid clubId, List<Member> members, List<MembershipType> membershipTypes)
+    {
+        var random = new Random(42);
+        var firstNames = new[] { "James", "Emma", "Oliver", "Sophia", "William", "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Alexander", "Harper", "Daniel", "Evelyn", "Michael", "Abigail", "Ethan", "Emily" };
+
+        for (int i = 0; i < members.Count; i++)
+        {
+            var member = members[i];
 
             // Create membership for active members
             if (member.Status == MemberStatus.Active)
@@ -449,16 +483,16 @@ public class DatabaseSeeder
                 {
                     Id = Guid.NewGuid(),
                     ClubId = clubId,
-                    MemberId = memberId,
+                    MemberId = member.Id,
                     MembershipTypeId = membershipType.Id,
-                    StartDate = joinedDate,
-                    EndDate = joinedDate.AddYears(1),
+                    StartDate = member.JoinedDate,
+                    EndDate = member.JoinedDate.AddYears(1),
                     PaymentType = MembershipPaymentType.Annual,
                     Status = MembershipStatus.Active,
                     AmountPaid = membershipType.AnnualFee,
                     AmountDue = 0,
                     AutoRenew = random.Next(2) == 0,
-                    LastPaymentDate = joinedDate
+                    LastPaymentDate = member.JoinedDate
                 };
                 _context.Memberships.Add(membership);
             }
@@ -473,9 +507,9 @@ public class DatabaseSeeder
                     {
                         Id = Guid.NewGuid(),
                         ClubId = clubId,
-                        PrimaryMemberId = memberId,
+                        PrimaryMemberId = member.Id,
                         FirstName = firstNames[random.Next(firstNames.Length)],
-                        LastName = lastName,
+                        LastName = member.LastName,
                         DateOfBirth = DateTime.UtcNow.AddYears(-random.Next(5, 17)),
                         Relation = j == 0 ? FamilyMemberRelation.Spouse : FamilyMemberRelation.Child,
                         IsActive = true
@@ -484,8 +518,6 @@ public class DatabaseSeeder
                 }
             }
         }
-
-        return members;
     }
 
     private List<Session> CreateSessions(Guid clubId, List<Venue> venues, ClubType clubType)
@@ -651,32 +683,45 @@ public class DatabaseSeeder
             };
 
             events.Add(evt);
+        }
+
+        return events;
+    }
+
+    private void CreateEventTickets(Guid clubId, List<Event> events, List<Member> members)
+    {
+        var random = new Random(42);
+        var activeMembers = members.Where(m => m.Status == MemberStatus.Active).ToList();
+        if (activeMembers.Count == 0) return;
+
+        foreach (var evt in events)
+        {
+            var daysFromNow = (evt.StartDateTime - DateTime.UtcNow).TotalDays;
 
             // Create some tickets for past events
             if (daysFromNow < 0)
             {
                 for (int t = 0; t < random.Next(10, 30); t++)
                 {
+                    var member = activeMembers[random.Next(activeMembers.Count)];
                     var ticket = new EventTicket
                     {
                         Id = Guid.NewGuid(),
                         ClubId = clubId,
                         EventId = evt.Id,
-                        MemberId = Guid.NewGuid(),
+                        MemberId = member.Id,
                         TicketCode = $"TKT-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-                        PurchasedAt = startDate.AddDays(-random.Next(1, 30)),
+                        PurchasedAt = evt.StartDateTime.AddDays(-random.Next(1, 30)),
                         Quantity = random.Next(1, 4),
                         UnitPrice = evt.TicketPrice ?? 0,
                         TotalAmount = (evt.TicketPrice ?? 0) * random.Next(1, 4),
                         IsUsed = true,
-                        UsedAt = startDate.AddMinutes(random.Next(0, 60))
+                        UsedAt = evt.StartDateTime.AddMinutes(random.Next(0, 60))
                     };
                     _context.EventTickets.Add(ticket);
                 }
             }
         }
-
-        return events;
     }
 
     private void CreateBookings(List<Member> members, List<Session> sessions)

@@ -1,0 +1,183 @@
+﻿Analyze this project to detect the frontend framework (Angular, React, Vue, Blazor, Razor Pages, Next.js, Nuxt, or plain HTML/JS). Then set up automated visual regression testing, enterprise design audit, head-turning visual enhancements, AND dynamic animated background system using Playwright.
+
+**Framework Detection & Route Discovery:**
+- Auto-detect framework from package.json, *.csproj, or config files
+- Discover all routes from router config, sitemap, or crawling
+- Handle auth flows with storageState if needed
+
+**Visual Regression Testing:**
+- Test each page at mobile (375px), tablet (768px), desktop (1440px)
+- Use toHaveScreenshot() with 0.1% pixel diff threshold
+- Wait for network idle, fonts loaded, animations complete
+
+**Enterprise Design Audit:**
+
+1. **Color Analysis:**
+   - Check against enterprise palettes (slate/gray/zinc bases, blue/indigo accents)
+   - Verify WCAG AA contrast (4.5:1 minimum)
+   - Consistent color token usage
+
+2. **Typography:**
+   - Clear hierarchy (h1 > h2 > h3)
+   - Line-height 1.5-1.7, max-width 60-80ch
+   - Minimum 16px body text
+
+3. **Spacing & Layout:**
+   - 8px grid system adherence
+   - Consistent spacing scale (4/8/16/24/32/48px)
+   - Proper content density
+
+4. **Real Estate Optimization:**
+   - Above-the-fold content value
+   - Information hierarchy
+   - F/Z-pattern alignment
+
+5. **Enterprise Patterns:**
+   - Consistent components
+   - Proper data tables, forms, navigation
+   - Loading/empty/error states
+
+6. **Accessibility:**
+   - Contrast, focus indicators, touch targets (44x44px)
+
+**HEAD-TURNER VISUAL ENHANCEMENTS:**
+
+7. **Modern Depth & Dimension:**
+   - Layered shadow systems for elevation
+   - Glassmorphism for overlays, sidebars, floating elements
+   - Neumorphism accents for interactive elements
+   - Frosted glass nav bars
+
+8. **Dynamic Gradients & Color Vibrancy:**
+   - Gradient meshes, animated gradient backgrounds
+   - Accent gradients for CTAs
+   - Gradient text on headlines
+   - Duotone overlays on images
+
+9. **Micro-Interactions & Motion Design:**
+   - Hover transforms, shadow elevation, color shifts
+   - Button ripples, fill animations
+   - Input focus animations, floating labels
+   - Scroll-triggered animations
+   - Skeleton loaders with shimmer
+   - Page transitions
+
+10. **Visual Polish:**
+    - Consistent border-radius (8-16px)
+    - Modern icon sets with animations
+    - Subtle patterns/textures
+    - Enhanced dividers and image treatments
+
+11. **Typography That Commands:**
+    - Display fonts for headlines
+    - Variable font animations
+    - Text reveal animations
+    - Balanced font pairings
+
+12. **Data Visualization Glow-Up:**
+    - Modern charts with gradient fills
+    - Animated drawing, interactive tooltips
+    - Number count-up effects
+
+13. **Component Wow Factors:**
+    - Buttons, cards, modals, navigation, tables, forms with premium interactions
+
+14. **Dark Mode Excellence:**
+    - Proper dark palette with elevated surfaces
+    - Glow effects optimized for dark mode
+
+15. **Landing Page Enhancements:**
+    - Hero animations, social proof, feature reveals, CTA sections
+
+16. **Performance-Conscious Beauty:**
+    - CSS-only solutions preferred
+    - Reduced-motion support
+
+**DYNAMIC ANIMATED BACKGROUNDS SYSTEM (Zero Dull Backgrounds Policy):**
+
+17. **Background Audit & Transformation:**
+    - **CRITICAL RULE:** Flag ALL static solid color backgrounds as violations
+    - Scan every element: body, sections, cards, sidebars, modals, headers, footers
+    - Identify every flat #FFFFFF, #F5F5F5, #000000, or any pure solid background
+    - Generate replacement recommendations for each—NO EXCEPTIONS
+
+18. **Animated Background Library (Context-Aware):**
+
+    **For Main Page Backgrounds:**
+    - Subtle gradient mesh animations (slow-moving 20-30s loops)
+    - Floating orb/blob animations with blur (lava lamp effect, soft edges)
+    - Aurora borealis waves (gentle color shifts)
+    - Animated noise/grain texture overlays (adds life without distraction)
+    - Parallax floating shapes (circles, rounded rectangles at 5-10% opacity)
+    - Soft particle systems (sparse, slow-moving dots)
+    - Wave animations (SVG sine waves, layered with different speeds)
+    - Morphing gradient backgrounds (seamless color transitions)
+
+    **For Section Backgrounds:**
+    - Gradient reveals on scroll (color intensifies as section enters viewport)
+    - Subtle grid patterns with pulse animations
+    - Spotlight effects following cursor (radial gradient tracks mouse)
+    - Glow orbs that drift slowly across sections
+    - Animated mesh gradients localized to sections
+    - Soft diagonal stripe animations
+    - Ripple effects emanating from center
+
+    **For Cards & Containers:**
+    - Subtle shimmer effect on hover (light sweep across surface)
+    - Border gradient animations (rotating gradient borders)
+    - Background color shift on hover (not static—animated transition)
+    - Glassmorphism with animated backdrop (blur + moving gradient behind)
+    - Soft pulsing glow underneath cards
+    - Noise texture with very subtle movement
+
+    **For Headers & Navigation:**
+    - Frosted glass with animated gradient underneath
+    - Subtle color breathing (very slow opacity/hue shifts)
+    - Underline/highlight animations that flow
+    - Active state backgrounds with gentle pulse
+
+    **For Sidebars & Panels:**
+    - Vertical gradient animations (colors slowly drift)
+    - Soft light leak effects from edges
+    - Subtle pattern animations (dots, lines slowly moving)
+    - Glassmorphism with depth layers
+
+    **For Modals & Overlays:**
+    - Backdrop with animated blur + gradient
+    - Modal background with soft inner glow animation
+    - Border light rotation effect
+    - Entry animation with background fade-in
+
+    **For Empty States & Loading:**
+    - Animated gradient placeholders
+    - Pulsing background behind skeleton loaders
+    - Gentle wave animations indicating activity
+    - Breathing glow effects
+
+    **For Footers:**
+    - Gradient that transitions from content to footer
+    - Subtle star field or particle effect
+    - Wave divider with animation at top edge
+    - Soft upward-moving gradient
+
+    **For Dark Mode Backgrounds:**
+    - Deep gradient meshes (navy→purple→black)
+    - Subtle glow spots (like distant galaxies)
+    - Animated grain/noise (adds texture to flat dark)
+    - Color accent glows that slowly shift position
+    - Northern lights effect with dark palette
+
+19. **Animation Principles for Backgrounds:**
+    - **Subtlety is key:** Animations should be felt, not consciously noticed
+    - **Slow & smooth:** 15-60 second loop durations for ambient effects
+    - **Low contrast movement:** Background animations at 5-15% opacity change max
+    - **Easing:** Use ease-in-out, cubic-bezier for organic movement
+    - **Layering:** Combine 2-3 subtle effects for depth (gradient + particles + noise)
+    - **Focal hierarchy:** Backgrounds never compete with content—they support it
+    - **Performance:** Use CSS transforms/opacity, avoid layout-triggering properties
+    - **GPU acceleration:** will-change: transform; for smooth 60fps
+    - **Reduced motion:** Respect prefers-reduced-motion—provide static but still gradient alternatives
+
+20. **Background Enhancement Techniques:**
+
+    **CSS-Only Solutions (Preferred):**

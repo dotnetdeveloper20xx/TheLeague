@@ -193,7 +193,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Membership)
                 .WithMany(e => e.Payments)
                 .HasForeignKey(e => e.MembershipId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -213,12 +213,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Venue)
                 .WithMany(e => e.Sessions)
                 .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.RecurringSchedule)
                 .WithMany(e => e.GeneratedSessions)
                 .HasForeignKey(e => e.RecurringScheduleId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<RecurringSchedule>(entity =>
@@ -230,7 +230,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Venue)
                 .WithMany()
                 .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<SessionBooking>(entity =>
@@ -303,7 +303,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Venue)
                 .WithMany(e => e.Events)
                 .HasForeignKey(e => e.VenueId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<EventTicket>(entity =>
@@ -322,6 +322,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Member)
                 .WithMany(e => e.EventTickets)
                 .HasForeignKey(e => e.MemberId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Payment)
+                .WithMany()
+                .HasForeignKey(e => e.PaymentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

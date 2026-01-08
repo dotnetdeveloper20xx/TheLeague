@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet new:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet add:*)",
+      "Bash(if not exist Entities mkdir Entities)",
+      "Bash(if not exist Enums mkdir Enums)",
+      "Bash(if not exist Interfaces mkdir Interfaces)",
+      "Bash(powershell:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(ng version:*)",
+      "Bash(ng new:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(npm init:*)",
+      "Bash(node:*)",
+      "Bash(taskkill:*)",
+      "Bash(dotnet run)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(npm start)",
+      "Bash(npx @angular/cli serve:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: League Membership Management Portal\n\nFull-stack multi-tenant SaaS application for sports club management.\n\nBackend \\(.NET 8\\):\n- RESTful API with JWT authentication\n- Multi-tenant architecture with club isolation\n- Controllers: Auth, Clubs, Members, Sessions, Events, Payments, Reports, Portal\n- Entity Framework Core with in-memory database for development\n- Comprehensive seed data for testing\n\nFrontend \\(Angular 19\\):\n- Role-based dashboards \\(SuperAdmin, ClubManager, Member\\)\n- Tailwind CSS styling with responsive design\n- Reactive forms with validation\n- API services for all endpoints\n\nFeatures:\n- Club management with settings and branding\n- Member registration and family accounts\n- Session scheduling with recurring bookings\n- Event management with ticketing\n- Payment processing \\(Stripe/PayPal ready\\)\n- Membership types and subscriptions\n- Reporting and analytics\n- Member portal with notifications\n\nTesting:\n- E2E test suite with Puppeteer \\(42 tests passing\\)\n- API health checks and navigation tests\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx playwright install:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd visual enhancements and Playwright visual regression testing\n\nVisual Effects \\(styles.scss - 575 lines\\):\n- Glassmorphism: .glass, .glass-dark, .glass-card, .glass-nav\n- Animated backgrounds: .bg-aurora, .bg-animated-mesh, .bg-floating-orbs, .bg-particles\n- Micro-interactions: .hover-lift, .hover-glow, .hover-shine, .btn-ripple\n- Gradient effects: .gradient-text, .gradient-btn, .gradient-border\n- Skeleton loaders with shimmer animation\n- Dark mode enhancements with glow effects\n- Reduced motion support for accessibility\n\nComponent Updates:\n- Login page: Aurora background, floating orbs, glassmorphism card\n- Admin layout: Glass sidebar, gradient nav items, particle background\n\nTesting:\n- Playwright configuration for mobile/tablet/desktop viewports\n- Visual regression tests for all routes\n- Enterprise design audit tests \\(contrast, typography, spacing\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd comprehensive Playwright test suite and fix test failures\n\n- Add full-feature-test.spec.ts with 39 automated tests covering:\n  - Super Admin dashboard, clubs, users, reports, settings\n  - Club Manager members, sessions, events, payments, memberships, venues\n  - Member Portal dashboard, sessions, events, payments, family, profile\n  - Auth flows \\(login, register, forgot password\\)\n  - CRUD operations and data verification\n  - Responsive design testing \\(mobile, tablet, desktop\\)\n\n- Fix bg-particles pointer-events blocking clicks \\(styles.scss\\)\n- Fix Playwright config to use chromium for all viewports\n- Fix membership-types route path in tests\n\nAll 117 tests pass \\(39 tests x 3 viewports\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(dir \"C:\\\\Users\\\\AfzalAhmed\\\\source\\\\repos\\\\dotnetdeveloper20xx\\\\LeagueMembershipManagementPortal\\\\the-league-client\\\\test-results\" /B)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(timeout 30 dotnet run:*)",
+      "Bash(dotnet ef database:*)",
+      "Bash(dotnet ef migrations remove:*)",
+      "Bash(timeout 90 dotnet run:*)"
+    ]
+  }
+}
