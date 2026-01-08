@@ -22,18 +22,20 @@ export default defineConfig({
   },
 
   projects: [
-    // Mobile viewport
+    // Mobile viewport - uses chromium with mobile viewport
     {
       name: 'mobile',
       use: {
-        ...devices['iPhone 12'],
+        browserName: 'chromium',
         viewport: { width: 375, height: 812 },
+        isMobile: true,
       },
     },
     // Tablet viewport
     {
       name: 'tablet',
       use: {
+        browserName: 'chromium',
         viewport: { width: 768, height: 1024 },
       },
     },
@@ -41,6 +43,7 @@ export default defineConfig({
     {
       name: 'desktop',
       use: {
+        browserName: 'chromium',
         viewport: { width: 1440, height: 900 },
       },
     },
