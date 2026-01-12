@@ -163,7 +163,7 @@ public class MembershipService : IMembershipService
             MembershipTypeId = request.MembershipTypeId,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
-            PaymentType = request.PaymentType,
+            BillingCycle = request.BillingCycle,
             Status = MembershipStatus.PendingPayment,
             AmountDue = membershipType?.AnnualFee ?? 0,
             AutoRenew = request.AutoRenew,
@@ -201,7 +201,7 @@ public class MembershipService : IMembershipService
 
         if (request.StartDate.HasValue) membership.StartDate = request.StartDate.Value;
         if (request.EndDate.HasValue) membership.EndDate = request.EndDate.Value;
-        if (request.PaymentType.HasValue) membership.PaymentType = request.PaymentType.Value;
+        if (request.BillingCycle.HasValue) membership.BillingCycle = request.BillingCycle.Value;
         if (request.Status.HasValue) membership.Status = request.Status.Value;
         if (request.AutoRenew.HasValue) membership.AutoRenew = request.AutoRenew.Value;
         if (request.Notes != null) membership.Notes = request.Notes;
@@ -229,7 +229,7 @@ public class MembershipService : IMembershipService
             MembershipTypeId = currentMembership.MembershipTypeId,
             StartDate = newStartDate,
             EndDate = newStartDate.AddYears(1),
-            PaymentType = request.PaymentType,
+            BillingCycle = request.BillingCycle,
             Status = MembershipStatus.PendingPayment,
             AmountDue = currentMembership.MembershipType?.AnnualFee ?? 0,
             AutoRenew = request.AutoRenew
@@ -285,7 +285,7 @@ public class MembershipService : IMembershipService
         m.MembershipType?.Name ?? "Unknown",
         m.StartDate,
         m.EndDate,
-        m.PaymentType,
+        m.BillingCycle,
         m.Status,
         m.AmountPaid,
         m.AmountDue,

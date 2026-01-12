@@ -78,3 +78,16 @@ public record SessionBookRequest(
 public record EventRegistrationRequest(
     int? TicketQuantity
 );
+
+// Alias for member's session bookings (same structure as UpcomingBookingDto)
+public record MemberBookingDto(
+    Guid BookingId,
+    Guid SessionId,
+    string SessionTitle,
+    DateTime StartTime,
+    DateTime EndTime,
+    string? VenueName,
+    string? FamilyMemberName,
+    bool CanCancel,
+    string Status
+);

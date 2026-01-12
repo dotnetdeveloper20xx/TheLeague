@@ -63,7 +63,7 @@ public record MembershipDto(
     string MembershipTypeName,
     DateTime StartDate,
     DateTime EndDate,
-    MembershipPaymentType PaymentType,
+    BillingCycle BillingCycle,
     MembershipStatus Status,
     decimal AmountPaid,
     decimal AmountDue,
@@ -78,7 +78,7 @@ public record MembershipCreateRequest(
     [Required] Guid MembershipTypeId,
     [Required] DateTime StartDate,
     [Required] DateTime EndDate,
-    MembershipPaymentType PaymentType = MembershipPaymentType.Annual,
+    BillingCycle BillingCycle = BillingCycle.Annual,
     bool AutoRenew = false,
     string? Notes = null
 );
@@ -86,13 +86,13 @@ public record MembershipCreateRequest(
 public record MembershipUpdateRequest(
     DateTime? StartDate,
     DateTime? EndDate,
-    MembershipPaymentType? PaymentType,
+    BillingCycle? BillingCycle,
     MembershipStatus? Status,
     bool? AutoRenew,
     string? Notes
 );
 
 public record MembershipRenewRequest(
-    MembershipPaymentType PaymentType = MembershipPaymentType.Annual,
+    BillingCycle BillingCycle = BillingCycle.Annual,
     bool AutoRenew = false
 );

@@ -13,6 +13,7 @@ public interface ISessionService
 
     // Bookings
     Task<IEnumerable<SessionBookingDto>> GetSessionBookingsAsync(Guid clubId, Guid sessionId);
+    Task<IEnumerable<MemberBookingDto>> GetMemberBookingsAsync(Guid clubId, Guid memberId);
     Task<SessionBookingDto> BookSessionAsync(Guid clubId, Guid sessionId, Guid memberId, BookSessionRequest request);
     Task<bool> CancelBookingAsync(Guid clubId, Guid sessionId, Guid memberId, Guid? familyMemberId);
     Task<bool> UpdateAttendanceAsync(Guid clubId, Guid sessionId, BulkAttendanceRequest request);

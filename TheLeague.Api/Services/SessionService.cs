@@ -144,6 +144,28 @@ public class SessionService : ISessionService
         return bookings.Select(MapBookingToDto);
     }
 
+    public async Task<IEnumerable<MemberBookingDto>> GetMemberBookingsAsync(Guid clubId, Guid memberId)
+    {
+        var bookings = await _context.SessionBookings.IgnoreQueryFilters()
+            .Where(b => b.ClubId == clubId && b.MemberId == memberId && b.Status == BookingStatus.Confirmed)
+            .Include(b => b.Session).ThenInclude(s => s.Venue)
+            .Include(b => b.FamilyMember)
+            .OrderBy(b => b.Session.StartTime)
+            .ToListAsync();
+
+        return bookings.Select(b => new MemberBookingDto(
+            b.Id,
+            b.SessionId,
+            b.Session?.Title ?? "Unknown",
+            b.Session?.StartTime ?? DateTime.MinValue,
+            b.Session?.EndTime ?? DateTime.MinValue,
+            b.Session?.Venue?.Name,
+            b.FamilyMember?.FullName,
+            b.Session != null && b.Session.StartTime > DateTime.UtcNow.AddHours(24), // Can cancel if > 24h before
+            b.Status.ToString()
+        ));
+    }
+
     public async Task<SessionBookingDto> BookSessionAsync(Guid clubId, Guid sessionId, Guid memberId, BookSessionRequest request)
     {
         var session = await _context.Sessions.FindAsync(sessionId);
@@ -536,12 +558,12 @@ public class SessionService : ISessionService
             s.Venue.Id,
             s.Venue.Name,
             s.Venue.Description,
-            s.Venue.Address,
+            s.Venue.AddressLine1,
             s.Venue.PostCode,
             s.Venue.Latitude,
             s.Venue.Longitude,
-            s.Venue.Capacity,
-            s.Venue.Facilities,
+            s.Venue.TotalCapacity,
+            s.Venue.AdditionalAmenities,
             s.Venue.ImageUrl,
             s.Venue.IsActive,
             s.Venue.IsPrimary,
@@ -580,12 +602,12 @@ public class SessionService : ISessionService
             rs.Venue.Id,
             rs.Venue.Name,
             rs.Venue.Description,
-            rs.Venue.Address,
+            rs.Venue.AddressLine1,
             rs.Venue.PostCode,
             rs.Venue.Latitude,
             rs.Venue.Longitude,
-            rs.Venue.Capacity,
-            rs.Venue.Facilities,
+            rs.Venue.TotalCapacity,
+            rs.Venue.AdditionalAmenities,
             rs.Venue.ImageUrl,
             rs.Venue.IsActive,
             rs.Venue.IsPrimary,

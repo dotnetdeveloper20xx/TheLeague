@@ -36,5 +36,7 @@ public class Club
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
     public ICollection<Event> Events { get; set; } = new List<Event>();
     public ICollection<Venue> Venues { get; set; } = new List<Venue>();
+    public ICollection<CustomFieldDefinition> CustomFields { get; set; } = new List<CustomFieldDefinition>();
+    public ICollection<CommunicationTemplate> CommunicationTemplates { get; set; } = new List<CommunicationTemplate>();
     public ClubSettings? Settings { get; set; }
 }

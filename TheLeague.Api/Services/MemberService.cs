@@ -173,7 +173,7 @@ public class MemberService : IMemberService
                     MembershipTypeId = membershipType.Id,
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.AddYears(1),
-                    PaymentType = MembershipPaymentType.Annual,
+                    BillingCycle = BillingCycle.Annual,
                     Status = MembershipStatus.PendingPayment,
                     AmountDue = membershipType.AnnualFee
                 };

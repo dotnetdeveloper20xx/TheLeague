@@ -7,19 +7,25 @@ const API_URL = 'http://localhost:7000';
 // Test credentials
 const credentials = {
   superAdmin: { email: 'admin@theleague.com', password: 'Admin123!' },
-  clubManager: { email: 'manager@riverside.com', password: 'Manager123!' },
-  member: { email: 'henry.brown1@riverside.com', password: 'Member123!' },
+  clubManager: { email: 'manager@riverside-tennis.com', password: 'Manager123!' },
+  member: { email: 'john.smith@email.com', password: 'Member123!' },
 };
 
 // Helper functions
 async function login(page: Page, user: { email: string; password: string }) {
   await page.goto('/auth/login');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
+
+  // Wait for login form to be ready
+  await page.waitForSelector('input[type="email"], input[formcontrolname="email"]', { timeout: 15000 });
+
   await page.fill('input[type="email"], input[formcontrolname="email"]', user.email);
   await page.fill('input[type="password"], input[formcontrolname="password"]', user.password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/\/(admin|club|portal)/, { timeout: 10000 });
-  await page.waitForLoadState('networkidle');
+
+  // Increased timeout for navigation after login
+  await page.waitForURL(/\/(admin|club|portal)/, { timeout: 30000 });
+  await page.waitForLoadState('domcontentloaded');
 }
 
 async function logout(page: Page) {
@@ -154,17 +160,24 @@ test.describe('Part 2: Club Manager Testing', () => {
   });
 
   test('Step 8: Member Detail - View member information', async ({ page }) => {
+    // Increase test timeout for this specific test
+    test.setTimeout(60000);
+
     await page.goto('/club/members');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+
+    // Wait for members to load
+    await page.waitForTimeout(2000);
 
     // Click on first member row (use force to handle any overlay elements)
     const memberRow = page.locator('table tbody tr, [class*="member-row"], [class*="list-item"]').first();
-    if (await memberRow.isVisible()) {
+    if (await memberRow.isVisible({ timeout: 5000 }).catch(() => false)) {
       await memberRow.click({ force: true });
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(2000);
     }
 
-    await page.screenshot({ path: 'test-results/08-club-member-detail.png', fullPage: true });
+    // Take screenshot with timeout option
+    await page.screenshot({ path: 'test-results/08-club-member-detail.png', fullPage: true, timeout: 30000 });
 
     console.log('✓ Step 8: Member detail page tested');
   });

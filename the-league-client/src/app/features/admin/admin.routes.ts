@@ -28,5 +28,34 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'settings',
     loadComponent: () => import('./settings/admin-settings.component').then(m => m.AdminSettingsComponent)
+  },
+  {
+    path: 'system-config',
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./system-config/system-config-dashboard.component').then(m => m.SystemConfigDashboardComponent)
+      },
+      {
+        path: 'payment',
+        loadComponent: () => import('./system-config/payment-config.component').then(m => m.PaymentConfigComponent)
+      },
+      {
+        path: 'email',
+        loadComponent: () => import('./system-config/email-config.component').then(m => m.EmailConfigComponent)
+      },
+      {
+        path: 'features',
+        loadComponent: () => import('./system-config/feature-flags.component').then(m => m.FeatureFlagsComponent)
+      },
+      {
+        path: 'appearance',
+        loadComponent: () => import('./system-config/appearance-config.component').then(m => m.AppearanceConfigComponent)
+      },
+      {
+        path: 'audit',
+        loadComponent: () => import('./system-config/audit-log.component').then(m => m.AuditLogComponent)
+      }
+    ]
   }
 ];

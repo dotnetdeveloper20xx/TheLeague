@@ -163,11 +163,10 @@ public class EventService : IEventService
             ClubId = clubId,
             EventId = eventId,
             MemberId = memberId,
-            Quantity = request.Quantity,
-            UnitPrice = unitPrice,
-            TotalAmount = unitPrice * request.Quantity,
-            TicketCode = GenerateTicketCode(),
-            PurchasedAt = DateTime.UtcNow
+            TicketNumber = GenerateTicketCode(),
+            Price = unitPrice,
+            FinalPrice = unitPrice * request.Quantity,
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.EventTickets.Add(ticket);
@@ -188,7 +187,7 @@ public class EventService : IEventService
             .Where(t => t.ClubId == clubId && t.MemberId == memberId)
             .Include(t => t.Event)
             .Include(t => t.Member)
-            .OrderByDescending(t => t.PurchasedAt)
+            .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
         return tickets.Select(MapTicketToDto);
@@ -197,12 +196,12 @@ public class EventService : IEventService
     public async Task<bool> ValidateTicketAsync(Guid clubId, string ticketCode)
     {
         var ticket = await _context.EventTickets.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.ClubId == clubId && t.TicketCode == ticketCode);
+            .FirstOrDefaultAsync(t => t.ClubId == clubId && t.TicketNumber == ticketCode);
 
-        if (ticket == null || ticket.IsUsed) return false;
+        if (ticket == null || ticket.IsCheckedIn) return false;
 
-        ticket.IsUsed = true;
-        ticket.UsedAt = DateTime.UtcNow;
+        ticket.IsCheckedIn = true;
+        ticket.CheckedInAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -269,7 +268,7 @@ public class EventService : IEventService
         return new EventAttendeesDto(
             tickets.Select(MapTicketToDto),
             rsvps.Select(MapRSVPToDto),
-            tickets.Sum(t => t.Quantity),
+            tickets.Count,
             rsvps.Count(r => r.Response == RSVPResponse.Attending),
             rsvps.Count(r => r.Response == RSVPResponse.Maybe),
             rsvps.Count(r => r.Response == RSVPResponse.NotAttending)
@@ -300,9 +299,9 @@ public class EventService : IEventService
         e.IsPublished,
         e.ImageUrl,
         e.Venue == null ? null : new VenueDto(
-            e.Venue.Id, e.Venue.Name, e.Venue.Description, e.Venue.Address,
-            e.Venue.PostCode, e.Venue.Latitude, e.Venue.Longitude, e.Venue.Capacity,
-            e.Venue.Facilities, e.Venue.ImageUrl, e.Venue.IsActive, e.Venue.IsPrimary, 0, 0
+            e.Venue.Id, e.Venue.Name, e.Venue.Description, e.Venue.AddressLine1,
+            e.Venue.PostCode, e.Venue.Latitude, e.Venue.Longitude, e.Venue.TotalCapacity,
+            e.Venue.AdditionalAmenities, e.Venue.ImageUrl, e.Venue.IsActive, e.Venue.IsPrimary, 0, 0
         )
     );
 
@@ -310,22 +309,22 @@ public class EventService : IEventService
         t.Id,
         t.EventId,
         t.Event?.Title ?? "Unknown",
-        t.MemberId,
+        t.MemberId ?? Guid.Empty,
         t.Member?.FullName ?? "Unknown",
-        t.Quantity,
-        t.UnitPrice,
-        t.TotalAmount,
-        t.TicketCode,
-        t.IsUsed,
-        t.UsedAt,
-        t.PurchasedAt
+        1,
+        t.Price,
+        t.FinalPrice,
+        t.TicketNumber,
+        t.IsCheckedIn,
+        t.CheckedInAt,
+        t.CreatedAt
     );
 
     private static EventRSVPDto MapRSVPToDto(EventRSVP r) => new(
         r.Id,
         r.EventId,
-        r.MemberId,
-        r.Member?.FullName ?? "Unknown",
+        r.MemberId ?? Guid.Empty,
+        r.Member?.FullName ?? r.Name ?? "Unknown",
         r.Response,
         r.GuestCount,
         r.Notes,

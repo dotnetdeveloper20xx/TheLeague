@@ -5,8 +5,8 @@ const API_URL = 'http://localhost:7000';
 // Test users for different roles
 const users = {
   superAdmin: { email: 'admin@theleague.com', password: 'Admin123!' },
-  clubManager: { email: 'manager@riverside.com', password: 'Manager123!' },
-  member: { email: 'henry.brown1@riverside.com', password: 'Member123!' },
+  clubManager: { email: 'manager@riverside-tennis.com', password: 'Manager123!' },
+  member: { email: 'john.smith@email.com', password: 'Member123!' },
 };
 
 // Routes organized by role

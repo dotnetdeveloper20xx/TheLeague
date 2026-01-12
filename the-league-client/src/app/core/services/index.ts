@@ -10,3 +10,7 @@ export * from './membership.service';
 export * from './venue.service';
 export * from './report.service';
 export * from './portal.service';
+export * from './competition.service';
+export * from './fee.service';
+export * from './invoice.service';
+export * from './system-config.service';

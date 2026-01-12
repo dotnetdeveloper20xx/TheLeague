@@ -44,12 +44,12 @@ public class VenueService : IVenueService
             ClubId = clubId,
             Name = request.Name,
             Description = request.Description,
-            Address = request.Address,
+            AddressLine1 = request.Address,
             PostCode = request.PostCode,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
-            Capacity = request.Capacity,
-            Facilities = request.Facilities,
+            TotalCapacity = request.Capacity,
+            AdditionalAmenities = request.Facilities,
             ImageUrl = request.ImageUrl,
             IsPrimary = request.IsPrimary,
             IsActive = true
@@ -72,12 +72,12 @@ public class VenueService : IVenueService
 
         if (request.Name != null) venue.Name = request.Name;
         if (request.Description != null) venue.Description = request.Description;
-        if (request.Address != null) venue.Address = request.Address;
+        if (request.Address != null) venue.AddressLine1 = request.Address;
         if (request.PostCode != null) venue.PostCode = request.PostCode;
         if (request.Latitude.HasValue) venue.Latitude = request.Latitude;
         if (request.Longitude.HasValue) venue.Longitude = request.Longitude;
-        if (request.Capacity.HasValue) venue.Capacity = request.Capacity;
-        if (request.Facilities != null) venue.Facilities = request.Facilities;
+        if (request.Capacity.HasValue) venue.TotalCapacity = request.Capacity;
+        if (request.Facilities != null) venue.AdditionalAmenities = request.Facilities;
         if (request.ImageUrl != null) venue.ImageUrl = request.ImageUrl;
         if (request.IsActive.HasValue) venue.IsActive = request.IsActive.Value;
         if (request.IsPrimary.HasValue) venue.IsPrimary = request.IsPrimary.Value;
@@ -133,12 +133,12 @@ public class VenueService : IVenueService
         v.Id,
         v.Name,
         v.Description,
-        v.Address,
+        v.AddressLine1,
         v.PostCode,
         v.Latitude,
         v.Longitude,
-        v.Capacity,
-        v.Facilities,
+        v.TotalCapacity,
+        v.AdditionalAmenities,
         v.ImageUrl,
         v.IsActive,
         v.IsPrimary,

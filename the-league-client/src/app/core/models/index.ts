@@ -1,6 +1,10 @@
 export * from './auth.model';
 export * from './club.model';
 export * from './member.model';
+export * from './competition.model';
+export * from './fee.model';
+export * from './invoice.model';
+export * from './system-config.model';
 
 // Session models
 export interface Session {

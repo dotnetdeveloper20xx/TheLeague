@@ -50,6 +50,22 @@ export const CLUB_ROUTES: Routes = [
     loadComponent: () => import('./events/event-detail.component').then(m => m.EventDetailComponent)
   },
   {
+    path: 'competitions',
+    loadComponent: () => import('./competitions/competitions-list.component').then(m => m.CompetitionsListComponent)
+  },
+  {
+    path: 'competitions/new',
+    loadComponent: () => import('./competitions/competition-form.component').then(m => m.CompetitionFormComponent)
+  },
+  {
+    path: 'competitions/:id',
+    loadComponent: () => import('./competitions/competition-detail.component').then(m => m.CompetitionDetailComponent)
+  },
+  {
+    path: 'competitions/:id/edit',
+    loadComponent: () => import('./competitions/competition-form.component').then(m => m.CompetitionFormComponent)
+  },
+  {
     path: 'payments',
     loadComponent: () => import('./payments/payments-list.component').then(m => m.PaymentsListComponent)
   },
@@ -60,6 +76,34 @@ export const CLUB_ROUTES: Routes = [
   {
     path: 'venues',
     loadComponent: () => import('./venues/venues-list.component').then(m => m.VenuesListComponent)
+  },
+  {
+    path: 'fees',
+    loadComponent: () => import('./fees/fees-list.component').then(m => m.FeesListComponent)
+  },
+  {
+    path: 'fees/new',
+    loadComponent: () => import('./fees/fee-form.component').then(m => m.FeeFormComponent)
+  },
+  {
+    path: 'fees/:id',
+    loadComponent: () => import('./fees/fee-form.component').then(m => m.FeeFormComponent)
+  },
+  {
+    path: 'invoices',
+    loadComponent: () => import('./invoices/invoices-list.component').then(m => m.InvoicesListComponent)
+  },
+  {
+    path: 'invoices/new',
+    loadComponent: () => import('./invoices/invoice-form.component').then(m => m.InvoiceFormComponent)
+  },
+  {
+    path: 'invoices/:id',
+    loadComponent: () => import('./invoices/invoice-detail.component').then(m => m.InvoiceDetailComponent)
+  },
+  {
+    path: 'invoices/:id/edit',
+    loadComponent: () => import('./invoices/invoice-form.component').then(m => m.InvoiceFormComponent)
   },
   {
     path: 'reports',

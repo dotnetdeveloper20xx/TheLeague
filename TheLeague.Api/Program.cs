@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TheLeague.Api.Middleware;
+using TheLeague.Api.Providers.Payment;
+using TheLeague.Api.Providers.Email;
 using TheLeague.Api.Services;
 using TheLeague.Api.Services.Interfaces;
 using TheLeague.Core.Entities;
@@ -83,7 +85,20 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IVenueService, VenueService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ICompetitionService, CompetitionService>();
+builder.Services.AddScoped<IFeeService, FeeService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<DatabaseSeeder>();
+
+// Add Data Protection for encrypting secrets
+builder.Services.AddDataProtection();
+
+// Register provider factories (Singleton - created at startup based on config)
+builder.Services.AddSingleton<IPaymentProviderFactory, PaymentProviderFactory>();
+builder.Services.AddSingleton<IEmailProviderFactory, EmailProviderFactory>();
+
+// Register system configuration service
+builder.Services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
 
 // Add Controllers
 builder.Services.AddControllers();

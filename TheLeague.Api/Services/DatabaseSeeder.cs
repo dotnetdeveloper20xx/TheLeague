@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using TheLeague.Core.Entities;
 using TheLeague.Core.Enums;
@@ -10,23 +11,114 @@ public class DatabaseSeeder
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IWebHostEnvironment _environment;
+    private readonly ILogger<DatabaseSeeder> _logger;
+
+    private SeedDataRoot? _seedData;
+    private readonly Dictionary<string, Guid> _clubIdMap = new();
+    private readonly Dictionary<string, Guid> _memberIdMap = new();
+    private readonly Dictionary<string, MembershipType> _membershipTypeMap = new();
+    private readonly Dictionary<string, Venue> _venueMap = new();
+    private readonly Dictionary<string, Member> _memberMap = new();
 
     public DatabaseSeeder(
         ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        IWebHostEnvironment environment,
+        ILogger<DatabaseSeeder> logger)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _environment = environment;
+        _logger = logger;
     }
 
     public async Task SeedAsync()
     {
+        // Load seed data from JSON file
+        await LoadSeedDataAsync();
+
         await SeedRolesAsync();
         await SeedSuperAdminAsync();
+        await SeedSystemConfigurationAsync();
         await SeedClubsAsync();
         await _context.SaveChangesAsync();
+    }
+
+    private async Task LoadSeedDataAsync()
+    {
+        var seedFilePath = Path.Combine(_environment.ContentRootPath, "..", "seedData.json");
+
+        if (!File.Exists(seedFilePath))
+        {
+            _logger.LogWarning("Seed data file not found at {Path}, using defaults", seedFilePath);
+            _seedData = new SeedDataRoot();
+            return;
+        }
+
+        try
+        {
+            var jsonContent = await File.ReadAllTextAsync(seedFilePath);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            _seedData = JsonSerializer.Deserialize<SeedDataRoot>(jsonContent, options) ?? new SeedDataRoot();
+            _logger.LogInformation("Loaded seed data from {Path}", seedFilePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load seed data from {Path}", seedFilePath);
+            _seedData = new SeedDataRoot();
+        }
+    }
+
+    private async Task SeedSystemConfigurationAsync()
+    {
+        if (_context.SystemConfigurations.Any())
+        {
+            return;
+        }
+
+        var configData = _seedData?.SystemConfiguration ?? new SystemConfigurationSeed();
+
+        var config = new SystemConfiguration
+        {
+            Id = Guid.NewGuid(),
+            PaymentProvider = configData.PaymentProvider,
+            MockPaymentDelayMs = configData.MockPaymentDelayMs,
+            MockPaymentFailureRate = configData.MockPaymentFailureRate,
+            EmailProvider = configData.EmailProvider,
+            MockEmailDelayMs = configData.MockEmailDelayMs,
+            DefaultFromEmail = configData.DefaultFromEmail,
+            DefaultFromName = configData.DefaultFromName,
+            MaintenanceMode = configData.MaintenanceMode,
+            AllowNewRegistrations = configData.AllowNewRegistrations,
+            EnableEmailNotifications = configData.EnableEmailNotifications,
+            PlatformName = configData.PlatformName,
+            PrimaryColor = configData.PrimaryColor,
+            CreatedAt = DateTime.UtcNow,
+            LastModifiedAt = DateTime.UtcNow,
+            LastModifiedBy = "System",
+            Version = 1
+        };
+
+        _context.SystemConfigurations.Add(config);
+
+        _context.ConfigurationAuditLogs.Add(new ConfigurationAuditLog
+        {
+            Id = Guid.NewGuid(),
+            Action = "Created",
+            Section = "System",
+            PropertyChanged = null,
+            OldValue = null,
+            NewValue = "Default configuration created",
+            ChangedBy = "System",
+            Timestamp = DateTime.UtcNow,
+            IpAddress = null
+        });
     }
 
     private async Task SeedRolesAsync()
@@ -43,33 +135,889 @@ public class DatabaseSeeder
 
     private async Task SeedSuperAdminAsync()
     {
-        var adminEmail = "admin@theleague.com";
-        var existingAdmin = await _userManager.FindByEmailAsync(adminEmail);
+        var adminData = _seedData?.Users?.SuperAdmin ?? new SuperAdminSeed
+        {
+            Email = "admin@theleague.com",
+            Password = "Admin123!",
+            FirstName = "Super",
+            LastName = "Admin"
+        };
+
+        var existingAdmin = await _userManager.FindByEmailAsync(adminData.Email);
 
         if (existingAdmin == null)
         {
             var admin = new ApplicationUser
             {
-                UserName = adminEmail,
-                Email = adminEmail,
+                UserName = adminData.Email,
+                Email = adminData.Email,
                 EmailConfirmed = true,
-                FirstName = "Super",
-                LastName = "Admin",
+                FirstName = adminData.FirstName,
+                LastName = adminData.LastName,
                 Role = UserRole.SuperAdmin,
                 IsActive = true
             };
 
-            var result = await _userManager.CreateAsync(admin, "Admin123!");
+            var result = await _userManager.CreateAsync(admin, adminData.Password);
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(admin, "SuperAdmin");
+                _logger.LogInformation("Created super admin: {Email}", adminData.Email);
             }
         }
     }
 
     private async Task SeedClubsAsync()
     {
-        // Club 1: Riverside Tennis Club
+        if (_context.Clubs.Any())
+        {
+            return;
+        }
+
+        var clubs = _seedData?.Clubs ?? new List<ClubSeed>();
+
+        if (!clubs.Any())
+        {
+            _logger.LogWarning("No clubs in seed data, creating default clubs");
+            await SeedDefaultClubsAsync();
+            return;
+        }
+
+        foreach (var clubData in clubs)
+        {
+            var clubId = Guid.NewGuid();
+            _clubIdMap[clubData.Id] = clubId;
+
+            var clubType = clubData.Type switch
+            {
+                "Tennis" => ClubType.Tennis,
+                "Multi-Sport" or "MultiSport" => ClubType.MultiSport,
+                "Golf" => ClubType.Golf,
+                "Swimming" => ClubType.Swimming,
+                "Football" => ClubType.Football,
+                "Cricket" => ClubType.Cricket,
+                _ => ClubType.Other
+            };
+
+            var club = new Club
+            {
+                Id = clubId,
+                Name = clubData.Name,
+                Slug = clubData.Name.ToLower().Replace(" ", "-"),
+                Description = clubData.Description,
+                ClubType = clubType,
+                ContactEmail = clubData.Email,
+                ContactPhone = clubData.Phone,
+                Address = $"{clubData.Address}, {clubData.City} {clubData.PostCode}",
+                Website = clubData.Website,
+                IsActive = clubData.IsActive,
+                CreatedAt = DateTime.UtcNow.AddMonths(-12),
+                LogoUrl = clubData.LogoUrl,
+                PrimaryColor = clubData.PrimaryColor,
+                SecondaryColor = clubData.SecondaryColor,
+                PreferredPaymentProvider = PaymentProvider.Stripe
+            };
+            _context.Clubs.Add(club);
+
+            var settings = new ClubSettings
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                AllowOnlineRegistration = true,
+                RequireEmergencyContact = true,
+                RequireMedicalInfo = false,
+                AllowFamilyAccounts = true,
+                AllowOnlinePayments = true,
+                AllowManualPayments = true,
+                AutoSendPaymentReminders = true,
+                PaymentReminderDaysBefore = 14,
+                AllowMemberBookings = true,
+                MaxAdvanceBookingDays = 14,
+                CancellationNoticePeriodHours = 24,
+                EnableWaitlist = true,
+                SendWelcomeEmail = true,
+                SendBookingConfirmations = true,
+                SendPaymentReceipts = true
+            };
+            _context.ClubSettings.Add(settings);
+
+            _logger.LogInformation("Created club: {ClubName}", clubData.Name);
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Seed club managers
+        await SeedClubManagersAsync();
+
+        // Seed data for the first club (the demo club)
+        var firstClubId = _clubIdMap.Values.First();
+        var firstClubSeedId = _clubIdMap.Keys.First();
+
+        await SeedMembershipTypesAsync(firstClubId, firstClubSeedId);
+        await SeedVenuesAsync(firstClubId, firstClubSeedId);
+        await _context.SaveChangesAsync();
+
+        await SeedMembersAsync(firstClubId, firstClubSeedId);
+        await _context.SaveChangesAsync();
+
+        await SeedFeesAsync(firstClubId, firstClubSeedId);
+        await SeedRecurringSchedulesAsync(firstClubId, firstClubSeedId);
+        await SeedSessionsAsync(firstClubId, firstClubSeedId);
+        await SeedEventsAsync(firstClubId, firstClubSeedId);
+        await _context.SaveChangesAsync();
+
+        await SeedCompetitionsAsync(firstClubId, firstClubSeedId);
+        await SeedPaymentsAsync(firstClubId);
+        await SeedInvoicesAsync(firstClubId);
+        await _context.SaveChangesAsync();
+
+        // Create bookings for sessions
+        CreateBookings();
+        await _context.SaveChangesAsync();
+
+        // Seed communication templates
+        SeedCommunicationTemplates(firstClubId);
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task SeedClubManagersAsync()
+    {
+        var managers = _seedData?.Users?.ClubManagers ?? new List<ClubManagerSeed>();
+
+        foreach (var managerData in managers)
+        {
+            if (!_clubIdMap.TryGetValue(managerData.ClubId, out var clubId))
+            {
+                continue;
+            }
+
+            var existingManager = await _userManager.FindByEmailAsync(managerData.Email);
+            if (existingManager != null) continue;
+
+            var manager = new ApplicationUser
+            {
+                UserName = managerData.Email,
+                Email = managerData.Email,
+                EmailConfirmed = true,
+                FirstName = managerData.FirstName,
+                LastName = managerData.LastName,
+                ClubId = clubId,
+                Role = UserRole.ClubManager,
+                IsActive = true
+            };
+
+            var result = await _userManager.CreateAsync(manager, managerData.Password);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(manager, "ClubManager");
+                _logger.LogInformation("Created club manager: {Email}", managerData.Email);
+            }
+        }
+    }
+
+    private async Task SeedMembershipTypesAsync(Guid clubId, string seedClubId)
+    {
+        var types = _seedData?.MembershipTypes?.Where(t => t.ClubId == seedClubId).ToList()
+            ?? new List<MembershipTypeSeed>();
+
+        foreach (var typeData in types)
+        {
+            var category = typeData.Name switch
+            {
+                var n when n.Contains("Junior") => MembershipCategory.Junior,
+                var n when n.Contains("Senior") => MembershipCategory.Senior,
+                var n when n.Contains("Family") => MembershipCategory.Family,
+                var n when n.Contains("Student") => MembershipCategory.Student,
+                _ => MembershipCategory.Individual
+            };
+
+            var membershipType = new MembershipType
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = typeData.Name,
+                ShortDescription = typeData.Name,
+                Description = typeData.Description,
+                Category = category,
+                ColorCode = category switch
+                {
+                    MembershipCategory.Junior => "#F59E0B",
+                    MembershipCategory.Senior => "#6366F1",
+                    MembershipCategory.Family => "#8B5CF6",
+                    MembershipCategory.Student => "#EC4899",
+                    _ => "#3B82F6"
+                },
+                BasePrice = typeData.AnnualFee,
+                AnnualFee = typeData.AnnualFee,
+                MonthlyFee = typeData.MonthlyFee,
+                SessionFee = typeData.SessionFee,
+                DefaultBillingCycle = BillingCycle.Annual,
+                AllowMonthlyPayment = true,
+                ProRataEnabled = true,
+                AccessType = AccessType.FullAccess,
+                MinAge = typeData.MinAge,
+                MaxAge = typeData.MaxAge,
+                MaxFamilyMembers = typeData.MaxFamilyMembers > 0 ? typeData.MaxFamilyMembers : null,
+                IsActive = typeData.IsActive,
+                AllowOnlineSignup = typeData.AllowOnlineSignup,
+                ShowOnWebsite = true,
+                IncludesBooking = typeData.IncludesBooking,
+                IncludesEvents = typeData.IncludesEvents,
+                IncludesClasses = true,
+                MaxSessionsPerWeek = typeData.MaxSessionsPerWeek,
+                AdvanceBookingDays = 14,
+                AllowFreeze = true,
+                MaxFreezeDays = 60,
+                RenewalReminderDays = 30,
+                GracePeriodDays = 14,
+                SortOrder = typeData.SortOrder
+            };
+
+            _context.MembershipTypes.Add(membershipType);
+            _membershipTypeMap[$"{seedClubId}:{typeData.Name}"] = membershipType;
+            _logger.LogInformation("Created membership type: {Name}", typeData.Name);
+        }
+    }
+
+    private async Task SeedVenuesAsync(Guid clubId, string seedClubId)
+    {
+        var venues = _seedData?.Venues?.Where(v => v.ClubId == seedClubId).ToList()
+            ?? new List<VenueSeed>();
+
+        var index = 0;
+        foreach (var venueData in venues)
+        {
+            var venue = new Venue
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = venueData.Name,
+                Description = venueData.Description,
+                AddressLine1 = venueData.Address,
+                PostCode = venueData.PostCode,
+                TotalCapacity = venueData.Capacity,
+                Notes = venueData.Facilities,
+                IsActive = venueData.IsActive,
+                IsPrimary = venueData.IsPrimary
+            };
+
+            _context.Venues.Add(venue);
+            _venueMap[$"{seedClubId}:{index}"] = venue;
+            index++;
+            _logger.LogInformation("Created venue: {Name}", venueData.Name);
+        }
+    }
+
+    private async Task SeedMembersAsync(Guid clubId, string seedClubId)
+    {
+        var members = _seedData?.Members?.Where(m => m.ClubId == seedClubId).ToList()
+            ?? new List<MemberSeed>();
+
+        var memberIndex = 1;
+        foreach (var memberData in members)
+        {
+            var memberId = Guid.NewGuid();
+            _memberIdMap[memberData.Email] = memberId;
+
+            var status = memberData.Status switch
+            {
+                "Active" => MemberStatus.Active,
+                "Expired" => MemberStatus.Expired,
+                "Suspended" => MemberStatus.Suspended,
+                "Pending" => MemberStatus.Pending,
+                _ => MemberStatus.Active
+            };
+
+            var joinedDate = DateTime.Parse(memberData.JoinedDate);
+
+            var member = new Member
+            {
+                Id = memberId,
+                ClubId = clubId,
+                MemberNumber = $"MBR-{memberIndex:D4}",
+                QRCodeData = $"{clubId}|{memberId}|MBR-{memberIndex:D4}",
+                FirstName = memberData.FirstName,
+                LastName = memberData.LastName,
+                Email = memberData.Email,
+                Phone = memberData.Phone,
+                DateOfBirth = DateTime.Parse(memberData.DateOfBirth),
+                Gender = Gender.PreferNotToSay,
+                Address = memberData.Address,
+                City = memberData.City,
+                PostCode = memberData.PostCode,
+                Country = "United Kingdom",
+                JoinedDate = joinedDate,
+                Status = status,
+                IsActive = status == MemberStatus.Active,
+                EmergencyContactName = memberData.EmergencyContactName,
+                EmergencyContactPhone = memberData.EmergencyContactPhone,
+                EmergencyContactRelation = memberData.EmergencyContactRelation,
+                MedicalNotes = memberData.MedicalConditions,
+                Allergies = memberData.Allergies,
+                IsFamilyAccount = memberData.IsFamilyAccount,
+                ApplicationStatus = ApplicationStatus.Approved,
+                ApplicationDate = joinedDate.AddDays(-7),
+                ApprovalDate = joinedDate,
+                WaiverAccepted = true,
+                WaiverAcceptedDate = joinedDate,
+                TermsAccepted = true,
+                TermsAcceptedDate = joinedDate,
+                EmailOptIn = true,
+                SmsOptIn = false,
+                MarketingOptIn = true
+            };
+
+            // Create user account
+            var user = new ApplicationUser
+            {
+                UserName = memberData.Email,
+                Email = memberData.Email,
+                EmailConfirmed = true,
+                FirstName = memberData.FirstName,
+                LastName = memberData.LastName,
+                ClubId = clubId,
+                MemberId = memberId,
+                Role = UserRole.Member,
+                IsActive = true
+            };
+
+            var result = await _userManager.CreateAsync(user, memberData.Password);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, "Member");
+                member.UserId = user.Id;
+            }
+
+            _context.Members.Add(member);
+            _memberMap[memberData.Email] = member;
+
+            // Create membership
+            var membershipTypeKey = $"{seedClubId}:{memberData.MembershipType}";
+            if (_membershipTypeMap.TryGetValue(membershipTypeKey, out var membershipType))
+            {
+                var membershipStatus = status switch
+                {
+                    MemberStatus.Active => MembershipStatus.Active,
+                    MemberStatus.Expired => MembershipStatus.Expired,
+                    MemberStatus.Pending => MembershipStatus.PendingPayment,
+                    _ => MembershipStatus.Active
+                };
+
+                var endDate = status == MemberStatus.Expired
+                    ? joinedDate.AddYears(1)
+                    : DateTime.UtcNow.AddMonths(6);
+
+                var membership = new Membership
+                {
+                    Id = Guid.NewGuid(),
+                    ClubId = clubId,
+                    MemberId = memberId,
+                    MembershipTypeId = membershipType.Id,
+                    StartDate = joinedDate,
+                    EndDate = endDate,
+                    BillingCycle = BillingCycle.Annual,
+                    Status = membershipStatus,
+                    AmountPaid = membershipType.AnnualFee,
+                    AmountDue = 0,
+                    AutoRenew = status == MemberStatus.Active,
+                    LastPaymentDate = joinedDate
+                };
+                _context.Memberships.Add(membership);
+            }
+
+            // Create family members
+            if (memberData.FamilyMembers != null)
+            {
+                foreach (var familyData in memberData.FamilyMembers)
+                {
+                    var relation = familyData.Relation switch
+                    {
+                        "Spouse" => FamilyMemberRelation.Spouse,
+                        "Child" => FamilyMemberRelation.Child,
+                        "Parent" => FamilyMemberRelation.Parent,
+                        "Sibling" => FamilyMemberRelation.Sibling,
+                        _ => FamilyMemberRelation.Other
+                    };
+
+                    var familyMember = new FamilyMember
+                    {
+                        Id = Guid.NewGuid(),
+                        ClubId = clubId,
+                        PrimaryMemberId = memberId,
+                        FirstName = familyData.FirstName,
+                        LastName = familyData.LastName,
+                        DateOfBirth = DateTime.Parse(familyData.DateOfBirth),
+                        Relation = relation,
+                        MedicalConditions = familyData.MedicalConditions,
+                        Allergies = familyData.Allergies,
+                        IsActive = true
+                    };
+                    _context.FamilyMembers.Add(familyMember);
+                }
+            }
+
+            memberIndex++;
+            _logger.LogInformation("Created member: {Name}", $"{memberData.FirstName} {memberData.LastName}");
+        }
+    }
+
+    private async Task SeedFeesAsync(Guid clubId, string seedClubId)
+    {
+        var fees = _seedData?.Fees?.Where(f => f.ClubId == seedClubId).ToList()
+            ?? new List<FeeSeed>();
+
+        foreach (var feeData in fees)
+        {
+            var feeType = feeData.Type switch
+            {
+                "Membership" => FeeType.Membership,
+                "Session" => FeeType.ClassFee,
+                "Training" => FeeType.Training,
+                "Competition" => FeeType.EventParticipation,
+                "Equipment" => FeeType.EquipmentRental,
+                _ => FeeType.Other
+            };
+
+            var frequency = feeData.Frequency switch
+            {
+                "Annual" => FeeFrequency.Annual,
+                "Monthly" => FeeFrequency.Monthly,
+                "Quarterly" => FeeFrequency.Quarterly,
+                _ => FeeFrequency.OneTime
+            };
+
+            var fee = new Fee
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = feeData.Name,
+                Description = feeData.Description,
+                Type = feeType,
+                Amount = feeData.Amount,
+                Currency = feeData.Currency,
+                Frequency = frequency,
+                IsActive = feeData.IsActive,
+                IsTaxable = feeData.Taxable,
+                TaxRate = feeData.TaxRate
+            };
+
+            _context.Fees.Add(fee);
+        }
+    }
+
+    private async Task SeedRecurringSchedulesAsync(Guid clubId, string seedClubId)
+    {
+        var schedules = _seedData?.RecurringSchedules?.Where(s => s.ClubId == seedClubId).ToList()
+            ?? new List<RecurringScheduleSeed>();
+
+        foreach (var scheduleData in schedules)
+        {
+            var venueKey = $"{seedClubId}:{scheduleData.VenueIndex}";
+            if (!_venueMap.TryGetValue(venueKey, out var venue))
+            {
+                continue;
+            }
+
+            var category = scheduleData.Category switch
+            {
+                "Juniors" => SessionCategory.Juniors,
+                "Seniors" => SessionCategory.Seniors,
+                "Beginners" => SessionCategory.Beginners,
+                "Advanced" => SessionCategory.Advanced,
+                "Mixed" => SessionCategory.Mixed,
+                _ => SessionCategory.AllAges
+            };
+
+            var dayOfWeek = Enum.Parse<DayOfWeek>(scheduleData.DayOfWeek);
+            var startTime = TimeSpan.Parse(scheduleData.StartTime);
+            var endTime = TimeSpan.Parse(scheduleData.EndTime);
+
+            var schedule = new RecurringSchedule
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                VenueId = venue.Id,
+                Title = scheduleData.Title,
+                Description = scheduleData.Description,
+                Category = category,
+                DayOfWeek = dayOfWeek,
+                StartTime = startTime,
+                EndTime = endTime,
+                Capacity = scheduleData.Capacity,
+                SessionFee = scheduleData.SessionFee > 0 ? scheduleData.SessionFee : null,
+                IsActive = scheduleData.IsActive
+            };
+
+            _context.RecurringSchedules.Add(schedule);
+        }
+    }
+
+    private async Task SeedSessionsAsync(Guid clubId, string seedClubId)
+    {
+        var sessions = _seedData?.Sessions?.Where(s => s.ClubId == seedClubId).ToList()
+            ?? new List<SessionSeed>();
+
+        foreach (var sessionData in sessions)
+        {
+            var venueKey = $"{seedClubId}:{sessionData.VenueIndex}";
+            if (!_venueMap.TryGetValue(venueKey, out var venue))
+            {
+                continue;
+            }
+
+            var category = sessionData.Category switch
+            {
+                "Juniors" => SessionCategory.Juniors,
+                "Seniors" => SessionCategory.Seniors,
+                "Beginners" => SessionCategory.Beginners,
+                "Advanced" => SessionCategory.Advanced,
+                "Mixed" => SessionCategory.Mixed,
+                _ => SessionCategory.AllAges
+            };
+
+            var date = DateTime.UtcNow.Date.AddDays(sessionData.DaysFromNow);
+            var startTime = TimeSpan.Parse(sessionData.StartTime);
+            var endTime = TimeSpan.Parse(sessionData.EndTime);
+
+            var session = new Session
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                VenueId = venue.Id,
+                Title = sessionData.Title,
+                Description = sessionData.Description,
+                Category = category,
+                StartTime = date.Add(startTime),
+                EndTime = date.Add(endTime),
+                Capacity = sessionData.Capacity,
+                CurrentBookings = 0,
+                SessionFee = sessionData.SessionFee > 0 ? sessionData.SessionFee : null,
+                IsCancelled = false
+            };
+
+            _context.Sessions.Add(session);
+        }
+    }
+
+    private async Task SeedEventsAsync(Guid clubId, string seedClubId)
+    {
+        var events = _seedData?.Events?.Where(e => e.ClubId == seedClubId).ToList()
+            ?? new List<EventSeed>();
+
+        foreach (var eventData in events)
+        {
+            var venueKey = $"{seedClubId}:{eventData.VenueIndex}";
+            if (!_venueMap.TryGetValue(venueKey, out var venue))
+            {
+                continue;
+            }
+
+            var eventType = eventData.Type switch
+            {
+                "Tournament" => EventType.Tournament,
+                "Social" => EventType.Social,
+                "Training" => EventType.Training,
+                "AGM" => EventType.AGM,
+                "Fundraiser" => EventType.Fundraiser,
+                "Competition" => EventType.Competition,
+                _ => EventType.Other
+            };
+
+            var skillLevel = eventData.SkillLevel switch
+            {
+                "Beginner" => SkillLevel.Beginner,
+                "Intermediate" => SkillLevel.Intermediate,
+                "Advanced" => SkillLevel.Advanced,
+                _ => SkillLevel.AllLevels
+            };
+
+            var startDate = DateTime.UtcNow.Date.AddDays(eventData.DaysFromNow);
+            var startTime = TimeSpan.Parse(eventData.StartTime);
+            var endTime = TimeSpan.Parse(eventData.EndTime);
+
+            var evt = new Event
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                VenueId = venue.Id,
+                Title = eventData.Title,
+                Description = eventData.Description,
+                Type = eventType,
+                StartDateTime = startDate.Add(startTime),
+                EndDateTime = startDate.AddDays(eventData.Duration - 1).Add(endTime),
+                Capacity = eventData.Capacity,
+                CurrentAttendees = 0,
+                IsTicketed = eventData.IsTicketed,
+                TicketPrice = eventData.TicketPrice,
+                MemberTicketPrice = eventData.MemberTicketPrice,
+                RequiresRSVP = eventData.RequiresRSVP,
+                MembersOnly = eventData.IsMembersOnly,
+                SkillLevel = skillLevel,
+                Status = EventStatus.Upcoming,
+                IsPublished = true
+            };
+
+            _context.Events.Add(evt);
+        }
+    }
+
+    private async Task SeedCompetitionsAsync(Guid clubId, string seedClubId)
+    {
+        var competitions = _seedData?.Competitions?.Where(c => c.ClubId == seedClubId).ToList()
+            ?? new List<CompetitionSeed>();
+
+        foreach (var compData in competitions)
+        {
+            var competition = new Competition
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = compData.Name,
+                Description = compData.Description,
+                Sport = compData.Sport,
+                Format = compData.Format, // Format is a string in Competition
+                StartDate = DateTime.Parse(compData.StartDate),
+                EndDate = DateTime.Parse(compData.EndDate),
+                EntryFee = compData.EntryFee,
+                IsPublished = compData.IsPublished,
+                Status = CompetitionStatus.InProgress
+            };
+
+            _context.Competitions.Add(competition);
+
+            // Create teams
+            foreach (var teamData in compData.Teams)
+            {
+                // Find captain member if exists
+                var captainMember = _memberMap.Values
+                    .FirstOrDefault(m => $"{m.FirstName} {m.LastName}" == teamData.Captain);
+
+                var team = new CompetitionTeam
+                {
+                    Id = Guid.NewGuid(),
+                    ClubId = clubId,
+                    CompetitionId = competition.Id,
+                    Name = teamData.Name,
+                    CaptainId = captainMember?.Id,
+                    HomeColors = teamData.Color,
+                    Played = 0,
+                    Won = 0,
+                    Drawn = 0,
+                    Lost = 0,
+                    GoalsFor = 0,
+                    GoalsAgainst = 0,
+                    Points = 0
+                };
+
+                _context.CompetitionTeams.Add(team);
+            }
+        }
+    }
+
+    private async Task SeedPaymentsAsync(Guid clubId)
+    {
+        var payments = _seedData?.Payments ?? new List<PaymentSeed>();
+
+        foreach (var paymentData in payments)
+        {
+            if (!_memberIdMap.TryGetValue(paymentData.MemberEmail, out var memberId))
+            {
+                continue;
+            }
+
+            var paymentType = paymentData.Type switch
+            {
+                "Membership" => PaymentType.Membership,
+                "EventTicket" => PaymentType.EventTicket,
+                "SessionFee" => PaymentType.SessionFee,
+                _ => PaymentType.Other
+            };
+
+            var paymentMethod = paymentData.Method switch
+            {
+                "Stripe" => PaymentMethod.Stripe,
+                "PayPal" => PaymentMethod.PayPal,
+                "Cash" => PaymentMethod.Cash,
+                "BankTransfer" => PaymentMethod.BankTransfer,
+                "Cheque" => PaymentMethod.Cheque,
+                _ => PaymentMethod.Stripe
+            };
+
+            var paymentStatus = paymentData.Status switch
+            {
+                "Completed" => PaymentStatus.Completed,
+                "Pending" => PaymentStatus.Pending,
+                "Failed" => PaymentStatus.Failed,
+                "Refunded" => PaymentStatus.Refunded,
+                _ => PaymentStatus.Completed
+            };
+
+            var payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                MemberId = memberId,
+                Amount = paymentData.Amount,
+                NetAmount = paymentData.Amount,
+                Currency = "GBP",
+                Type = paymentType,
+                Method = paymentMethod,
+                Status = paymentStatus,
+                Description = paymentData.Description,
+                ReferenceNumber = $"txn_{Guid.NewGuid():N}",
+                PaymentDate = DateTime.UtcNow.AddDays(-paymentData.DaysAgo)
+            };
+
+            _context.Payments.Add(payment);
+        }
+    }
+
+    private async Task SeedInvoicesAsync(Guid clubId)
+    {
+        var invoices = _seedData?.Invoices ?? new List<InvoiceSeed>();
+
+        foreach (var invoiceData in invoices)
+        {
+            if (!_memberIdMap.TryGetValue(invoiceData.MemberEmail, out var memberId))
+            {
+                continue;
+            }
+
+            var invoiceStatus = invoiceData.Status switch
+            {
+                "Paid" => InvoiceStatus.Paid,
+                "Pending" => InvoiceStatus.Sent,
+                "Overdue" => InvoiceStatus.Overdue,
+                "Cancelled" => InvoiceStatus.Voided,
+                _ => InvoiceStatus.Sent
+            };
+
+            var invoiceDate = DateTime.UtcNow.AddDays(-invoiceData.DaysAgo);
+            var dueDate = DateTime.UtcNow.AddDays(invoiceData.DueDate);
+
+            var invoice = new Invoice
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                MemberId = memberId,
+                InvoiceNumber = $"INV-{DateTime.UtcNow:yyyyMM}-{Guid.NewGuid().ToString()[..4].ToUpper()}",
+                InvoiceDate = invoiceDate,
+                DueDate = dueDate,
+                SubTotal = invoiceData.Amount,
+                TaxAmount = 0,
+                TotalAmount = invoiceData.Amount,
+                PaidAmount = invoiceStatus == InvoiceStatus.Paid ? invoiceData.Amount : 0,
+                BalanceDue = invoiceStatus == InvoiceStatus.Paid ? 0 : invoiceData.Amount,
+                Status = invoiceStatus,
+                Notes = invoiceData.Description
+            };
+
+            _context.Invoices.Add(invoice);
+
+            // Add line items
+            foreach (var lineItemData in invoiceData.LineItems)
+            {
+                var lineItem = new InvoiceLineItem
+                {
+                    Id = Guid.NewGuid(),
+                    InvoiceId = invoice.Id,
+                    Description = lineItemData.Description,
+                    Quantity = 1,
+                    UnitPrice = lineItemData.Amount,
+                    SubTotal = lineItemData.Amount,
+                    Total = lineItemData.Amount
+                };
+                _context.InvoiceLineItems.Add(lineItem);
+            }
+        }
+    }
+
+    private void CreateBookings()
+    {
+        var sessions = _context.Sessions.Local.ToList();
+        var members = _memberMap.Values.Where(m => m.Status == MemberStatus.Active).ToList();
+        var random = new Random(42);
+
+        foreach (var session in sessions.Take(5))
+        {
+            var bookingsCount = Math.Min(random.Next(2, 6), session.Capacity);
+            var selectedMembers = members.OrderBy(_ => random.Next()).Take(bookingsCount).ToList();
+
+            foreach (var member in selectedMembers)
+            {
+                var booking = new SessionBooking
+                {
+                    Id = Guid.NewGuid(),
+                    ClubId = session.ClubId,
+                    SessionId = session.Id,
+                    MemberId = member.Id,
+                    BookedAt = DateTime.UtcNow.AddDays(-random.Next(1, 7)),
+                    Status = BookingStatus.Confirmed,
+                    Attended = false
+                };
+
+                _context.SessionBookings.Add(booking);
+                session.CurrentBookings++;
+            }
+        }
+    }
+
+    private void SeedCommunicationTemplates(Guid clubId)
+    {
+        var templates = new[]
+        {
+            new CommunicationTemplate
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = "Welcome Email",
+                Subject = "Welcome to {{ClubName}}!",
+                Body = "Dear {{MemberName}},\n\nWelcome to {{ClubName}}! We're thrilled to have you as a member.\n\nYour membership details:\n- Membership Type: {{MembershipType}}\n- Start Date: {{StartDate}}\n\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nThe {{ClubName}} Team",
+                Type = TemplateType.Email,
+                Category = TemplateCategory.Welcome,
+                IsActive = true
+            },
+            new CommunicationTemplate
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = "Payment Reminder",
+                Subject = "Payment Reminder - {{ClubName}}",
+                Body = "Dear {{MemberName}},\n\nThis is a friendly reminder that your membership payment of {{Amount}} is due on {{DueDate}}.\n\nPlease log in to your account to make the payment.\n\nThank you,\nThe {{ClubName}} Team",
+                Type = TemplateType.Email,
+                Category = TemplateCategory.PaymentReminder,
+                IsActive = true
+            },
+            new CommunicationTemplate
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = "Booking Confirmation",
+                Subject = "Booking Confirmed - {{SessionTitle}}",
+                Body = "Dear {{MemberName}},\n\nYour booking has been confirmed!\n\nSession: {{SessionTitle}}\nDate: {{SessionDate}}\nTime: {{SessionTime}}\nVenue: {{Venue}}\n\nWe look forward to seeing you!\n\nBest regards,\nThe {{ClubName}} Team",
+                Type = TemplateType.Email,
+                Category = TemplateCategory.BookingConfirmation,
+                IsActive = true
+            },
+            new CommunicationTemplate
+            {
+                Id = Guid.NewGuid(),
+                ClubId = clubId,
+                Name = "Renewal Reminder",
+                Subject = "Your membership is expiring soon - {{ClubName}}",
+                Body = "Dear {{MemberName}},\n\nYour {{MembershipType}} membership will expire on {{ExpiryDate}}.\n\nRenew now to continue enjoying all club benefits without interruption.\n\nRenewal amount: {{RenewalAmount}}\n\nThank you for being a valued member!\n\nThe {{ClubName}} Team",
+                Type = TemplateType.Email,
+                Category = TemplateCategory.MembershipRenewal,
+                IsActive = true
+            }
+        };
+
+        _context.CommunicationTemplates.AddRange(templates);
+    }
+
+    private async Task SeedDefaultClubsAsync()
+    {
+        // Fallback to creating default clubs if no seed data
         var club1Id = Guid.NewGuid();
         var club1 = new Club
         {
@@ -84,784 +1032,23 @@ public class DatabaseSeeder
             Website = "https://riversidetc.com",
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddMonths(-12),
-            LogoUrl = null,
             PrimaryColor = "#2E7D32",
-            SecondaryColor = "#81C784",
-            PreferredPaymentProvider = PaymentProvider.Stripe
+            SecondaryColor = "#81C784"
         };
         _context.Clubs.Add(club1);
 
-        var club1Settings = new ClubSettings
+        var settings = new ClubSettings
         {
             Id = Guid.NewGuid(),
             ClubId = club1Id,
             AllowOnlineRegistration = true,
             RequireEmergencyContact = true,
-            RequireMedicalInfo = false,
             AllowFamilyAccounts = true,
             AllowOnlinePayments = true,
             AllowManualPayments = true,
-            AutoSendPaymentReminders = true,
-            PaymentReminderDaysBefore = 14,
             AllowMemberBookings = true,
-            MaxAdvanceBookingDays = 14,
-            CancellationNoticePeriodHours = 24,
-            EnableWaitlist = true,
-            SendWelcomeEmail = true,
-            SendBookingConfirmations = true,
-            SendPaymentReceipts = true
+            MaxAdvanceBookingDays = 14
         };
-        _context.ClubSettings.Add(club1Settings);
-
-        // Club 2: Downtown Basketball Academy
-        var club2Id = Guid.NewGuid();
-        var club2 = new Club
-        {
-            Id = club2Id,
-            Name = "Downtown Basketball Academy",
-            Slug = "downtown-basketball",
-            Description = "Youth basketball training academy in Manchester",
-            ClubType = ClubType.MultiSport,
-            ContactEmail = "contact@downtownbasketball.com",
-            ContactPhone = "+44 20 2345 6789",
-            Address = "456 Court Street, Manchester M1 1AA",
-            Website = "https://downtownbasketball.com",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow.AddMonths(-8),
-            LogoUrl = null,
-            PrimaryColor = "#D32F2F",
-            SecondaryColor = "#EF5350",
-            PreferredPaymentProvider = PaymentProvider.PayPal
-        };
-        _context.Clubs.Add(club2);
-
-        var club2Settings = new ClubSettings
-        {
-            Id = Guid.NewGuid(),
-            ClubId = club2Id,
-            AllowOnlineRegistration = true,
-            RequireEmergencyContact = true,
-            RequireMedicalInfo = true,
-            AllowFamilyAccounts = true,
-            AllowOnlinePayments = true,
-            AllowManualPayments = true,
-            AutoSendPaymentReminders = true,
-            PaymentReminderDaysBefore = 7,
-            AllowMemberBookings = true,
-            MaxAdvanceBookingDays = 7,
-            CancellationNoticePeriodHours = 12,
-            EnableWaitlist = true
-        };
-        _context.ClubSettings.Add(club2Settings);
-
-        // Club 3: Lakeside Swimming Club
-        var club3Id = Guid.NewGuid();
-        var club3 = new Club
-        {
-            Id = club3Id,
-            Name = "Lakeside Swimming Club",
-            Slug = "lakeside-swimming",
-            Description = "Competitive swimming club with Olympic-size pool",
-            ClubType = ClubType.Swimming,
-            ContactEmail = "hello@lakesideswim.com",
-            ContactPhone = "+44 20 3456 7890",
-            Address = "789 Lake Avenue, Birmingham B1 1AA",
-            Website = "https://lakesideswim.com",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow.AddMonths(-6),
-            LogoUrl = null,
-            PrimaryColor = "#1976D2",
-            SecondaryColor = "#64B5F6",
-            PreferredPaymentProvider = PaymentProvider.Stripe
-        };
-        _context.Clubs.Add(club3);
-
-        var club3Settings = new ClubSettings
-        {
-            Id = Guid.NewGuid(),
-            ClubId = club3Id,
-            AllowOnlineRegistration = true,
-            RequireEmergencyContact = true,
-            RequireMedicalInfo = true,
-            AllowFamilyAccounts = true,
-            AllowOnlinePayments = true,
-            AllowManualPayments = true,
-            AutoSendPaymentReminders = true,
-            PaymentReminderDaysBefore = 21,
-            AllowMemberBookings = true,
-            MaxAdvanceBookingDays = 21,
-            CancellationNoticePeriodHours = 48,
-            EnableWaitlist = true
-        };
-        _context.ClubSettings.Add(club3Settings);
-
-        // Seed data for each club
-        await SeedClubDataAsync(club1Id, "riverside", ClubType.Tennis);
-        await SeedClubDataAsync(club2Id, "downtown", ClubType.MultiSport);
-        await SeedClubDataAsync(club3Id, "lakeside", ClubType.Swimming);
-    }
-
-    private async Task SeedClubDataAsync(Guid clubId, string clubSlug, ClubType clubType)
-    {
-        // Create club manager
-        var managerEmail = $"manager@{clubSlug}.com";
-        var manager = new ApplicationUser
-        {
-            UserName = managerEmail,
-            Email = managerEmail,
-            EmailConfirmed = true,
-            FirstName = "Club",
-            LastName = "Manager",
-            ClubId = clubId,
-            Role = UserRole.ClubManager,
-            IsActive = true
-        };
-
-        var managerResult = await _userManager.CreateAsync(manager, "Manager123!");
-        if (managerResult.Succeeded)
-        {
-            await _userManager.AddToRoleAsync(manager, "ClubManager");
-        }
-
-        // Create membership types
-        var membershipTypes = CreateMembershipTypes(clubId);
-        _context.MembershipTypes.AddRange(membershipTypes);
-
-        // Create venues
-        var venues = CreateVenues(clubId, clubType);
-        _context.Venues.AddRange(venues);
-
-        // Save membership types and venues first (needed for foreign keys)
-        await _context.SaveChangesAsync();
-
-        // Create members (just the member records)
-        var members = await CreateMembersAsync(clubId, clubSlug, membershipTypes);
-        _context.Members.AddRange(members);
-
-        // Save members first (needed for foreign keys in family members, memberships, bookings, etc.)
-        await _context.SaveChangesAsync();
-
-        // Create memberships and family members (after members are saved)
-        CreateMembershipsAndFamilyMembers(clubId, members, membershipTypes);
-
-        // Save memberships and family members
-        await _context.SaveChangesAsync();
-
-        // Create sessions
-        var sessions = CreateSessions(clubId, venues, clubType);
-        _context.Sessions.AddRange(sessions);
-
-        // Create recurring schedules
-        var schedules = CreateRecurringSchedules(clubId, venues, clubType);
-        _context.RecurringSchedules.AddRange(schedules);
-
-        // Create events
-        var events = CreateEvents(clubId, venues, clubType);
-        _context.Events.AddRange(events);
-
-        // Save sessions and events first (needed for bookings and tickets)
-        await _context.SaveChangesAsync();
-
-        // Create bookings
-        CreateBookings(members, sessions);
-
-        // Create event tickets (after events and members are saved)
-        CreateEventTickets(clubId, events, members);
-
-        // Create payments
-        var payments = CreatePayments(clubId, members, membershipTypes);
-        _context.Payments.AddRange(payments);
-
-        // Save bookings, tickets, and payments
-        await _context.SaveChangesAsync();
-    }
-
-    private List<MembershipType> CreateMembershipTypes(Guid clubId)
-    {
-        return new List<MembershipType>
-        {
-            new MembershipType
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                Name = "Adult Annual",
-                Description = "Full access annual membership for adults 18+",
-                AnnualFee = 299.99m,
-                MonthlyFee = 29.99m,
-                IsActive = true,
-                AllowOnlineSignup = true,
-                MinAge = 18,
-                IncludesBooking = true,
-                IncludesEvents = true,
-                SortOrder = 1
-            },
-            new MembershipType
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                Name = "Adult Monthly",
-                Description = "Flexible monthly membership for adults",
-                AnnualFee = 0m,
-                MonthlyFee = 39.99m,
-                IsActive = true,
-                AllowOnlineSignup = true,
-                MinAge = 18,
-                IncludesBooking = true,
-                IncludesEvents = true,
-                SortOrder = 2
-            },
-            new MembershipType
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                Name = "Junior",
-                Description = "Membership for juniors under 18",
-                AnnualFee = 149.99m,
-                MonthlyFee = 14.99m,
-                IsActive = true,
-                AllowOnlineSignup = true,
-                MaxAge = 17,
-                IncludesBooking = true,
-                IncludesEvents = true,
-                MaxSessionsPerWeek = 5,
-                SortOrder = 3
-            },
-            new MembershipType
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                Name = "Family",
-                Description = "Annual membership for families (2 adults + up to 3 children)",
-                AnnualFee = 599.99m,
-                MonthlyFee = 59.99m,
-                IsActive = true,
-                AllowOnlineSignup = true,
-                MaxFamilyMembers = 5,
-                IncludesBooking = true,
-                IncludesEvents = true,
-                SortOrder = 4
-            },
-            new MembershipType
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                Name = "Student",
-                Description = "Discounted membership for full-time students",
-                AnnualFee = 199.99m,
-                MonthlyFee = 19.99m,
-                IsActive = true,
-                AllowOnlineSignup = true,
-                MinAge = 16,
-                MaxAge = 25,
-                IncludesBooking = true,
-                IncludesEvents = true,
-                SortOrder = 5
-            }
-        };
-    }
-
-    private List<Venue> CreateVenues(Guid clubId, ClubType clubType)
-    {
-        var venues = new List<Venue>();
-
-        switch (clubType)
-        {
-            case ClubType.Tennis:
-                venues.AddRange(new[]
-                {
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Court 1", Description = "Indoor hard court", Capacity = 4, IsActive = true, Address = "Main Building", IsPrimary = true },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Court 2", Description = "Indoor hard court", Capacity = 4, IsActive = true, Address = "Main Building" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Court 3", Description = "Outdoor clay court", Capacity = 4, IsActive = true, Address = "Outdoor Area" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Court 4", Description = "Outdoor clay court", Capacity = 4, IsActive = true, Address = "Outdoor Area" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Training Room", Description = "Fitness and conditioning", Capacity = 20, IsActive = true, Address = "Main Building" }
-                });
-                break;
-            case ClubType.MultiSport:
-                venues.AddRange(new[]
-                {
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Main Court", Description = "Full-size indoor court", Capacity = 30, IsActive = true, Address = "Sports Hall A", IsPrimary = true },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Practice Court", Description = "Half court for drills", Capacity = 15, IsActive = true, Address = "Sports Hall B" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Gym", Description = "Strength and conditioning", Capacity = 25, IsActive = true, Address = "Building B" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Video Room", Description = "Game analysis", Capacity = 20, IsActive = true, Address = "Building A" }
-                });
-                break;
-            case ClubType.Swimming:
-                venues.AddRange(new[]
-                {
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Olympic Pool", Description = "50m competition pool", Capacity = 100, IsActive = true, Address = "Aquatic Center", IsPrimary = true },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Training Pool", Description = "25m training pool", Capacity = 50, IsActive = true, Address = "Aquatic Center" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Diving Pool", Description = "Diving and water polo", Capacity = 30, IsActive = true, Address = "Aquatic Center" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Kids Pool", Description = "Learn to swim area", Capacity = 20, IsActive = true, Address = "Aquatic Center" },
-                    new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Dry Training Area", Description = "Land-based conditioning", Capacity = 30, IsActive = true, Address = "Building B" }
-                });
-                break;
-            default:
-                venues.Add(new Venue { Id = Guid.NewGuid(), ClubId = clubId, Name = "Main Facility", Description = "Primary venue", Capacity = 50, IsActive = true, Address = "Main Building", IsPrimary = true });
-                break;
-        }
-
-        return venues;
-    }
-
-    private async Task<List<Member>> CreateMembersAsync(Guid clubId, string clubSlug, List<MembershipType> membershipTypes)
-    {
-        var members = new List<Member>();
-        var random = new Random(42);
-
-        var firstNames = new[] { "James", "Emma", "Oliver", "Sophia", "William", "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Alexander", "Harper", "Daniel", "Evelyn", "Michael", "Abigail", "Ethan", "Emily" };
-        var lastNames = new[] { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White", "Harris" };
-
-        for (int i = 0; i < 30; i++)
-        {
-            var firstName = firstNames[random.Next(firstNames.Length)];
-            var lastName = lastNames[random.Next(lastNames.Length)];
-            var email = $"{firstName.ToLower()}.{lastName.ToLower()}{i}@{clubSlug}.com";
-
-            var memberId = Guid.NewGuid();
-            var joinedDate = DateTime.UtcNow.AddMonths(-random.Next(1, 24));
-            var member = new Member
-            {
-                Id = memberId,
-                ClubId = clubId,
-                FirstName = firstName,
-                LastName = lastName,
-                Email = email,
-                Phone = $"+44 7{random.Next(100, 999)} {random.Next(100, 999)} {random.Next(1000, 9999)}",
-                DateOfBirth = DateTime.UtcNow.AddYears(-random.Next(18, 65)).AddDays(-random.Next(0, 365)),
-                Address = $"{random.Next(1, 100)} {lastNames[random.Next(lastNames.Length)]} Street",
-                City = new[] { "London", "Manchester", "Birmingham", "Leeds", "Liverpool" }[random.Next(5)],
-                PostCode = $"{(char)('A' + random.Next(26))}{(char)('A' + random.Next(26))}{random.Next(1, 20)} {random.Next(1, 9)}{(char)('A' + random.Next(26))}{(char)('A' + random.Next(26))}",
-                JoinedDate = joinedDate,
-                Status = i < 25 ? MemberStatus.Active : (i < 28 ? MemberStatus.Expired : MemberStatus.Pending),
-                IsActive = i < 25,
-                EmergencyContactName = $"{firstNames[random.Next(firstNames.Length)]} {lastName}",
-                EmergencyContactPhone = $"+44 7{random.Next(100, 999)} {random.Next(100, 999)} {random.Next(1000, 9999)}",
-                EmergencyContactRelation = new[] { "Spouse", "Parent", "Sibling", "Friend" }[random.Next(4)]
-            };
-
-            // Create user account for member
-            var user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true,
-                FirstName = firstName,
-                LastName = lastName,
-                ClubId = clubId,
-                MemberId = memberId,
-                Role = UserRole.Member,
-                IsActive = true
-            };
-
-            var result = await _userManager.CreateAsync(user, "Member123!");
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(user, "Member");
-                member.UserId = user.Id;
-            }
-
-            members.Add(member);
-        }
-
-        return members;
-    }
-
-    private void CreateMembershipsAndFamilyMembers(Guid clubId, List<Member> members, List<MembershipType> membershipTypes)
-    {
-        var random = new Random(42);
-        var firstNames = new[] { "James", "Emma", "Oliver", "Sophia", "William", "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Alexander", "Harper", "Daniel", "Evelyn", "Michael", "Abigail", "Ethan", "Emily" };
-
-        for (int i = 0; i < members.Count; i++)
-        {
-            var member = members[i];
-
-            // Create membership for active members
-            if (member.Status == MemberStatus.Active)
-            {
-                var membershipType = membershipTypes[random.Next(membershipTypes.Count)];
-                var membership = new Membership
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = clubId,
-                    MemberId = member.Id,
-                    MembershipTypeId = membershipType.Id,
-                    StartDate = member.JoinedDate,
-                    EndDate = member.JoinedDate.AddYears(1),
-                    PaymentType = MembershipPaymentType.Annual,
-                    Status = MembershipStatus.Active,
-                    AmountPaid = membershipType.AnnualFee,
-                    AmountDue = 0,
-                    AutoRenew = random.Next(2) == 0,
-                    LastPaymentDate = member.JoinedDate
-                };
-                _context.Memberships.Add(membership);
-            }
-
-            // Add family members for some members
-            if (i % 5 == 0 && member.Status == MemberStatus.Active)
-            {
-                var familyCount = random.Next(1, 4);
-                for (int j = 0; j < familyCount; j++)
-                {
-                    var familyMember = new FamilyMember
-                    {
-                        Id = Guid.NewGuid(),
-                        ClubId = clubId,
-                        PrimaryMemberId = member.Id,
-                        FirstName = firstNames[random.Next(firstNames.Length)],
-                        LastName = member.LastName,
-                        DateOfBirth = DateTime.UtcNow.AddYears(-random.Next(5, 17)),
-                        Relation = j == 0 ? FamilyMemberRelation.Spouse : FamilyMemberRelation.Child,
-                        IsActive = true
-                    };
-                    _context.FamilyMembers.Add(familyMember);
-                }
-            }
-        }
-    }
-
-    private List<Session> CreateSessions(Guid clubId, List<Venue> venues, ClubType clubType)
-    {
-        var sessions = new List<Session>();
-        var random = new Random(42);
-
-        var sessionTitles = clubType switch
-        {
-            ClubType.Tennis => new[] { "Singles Practice", "Doubles Clinic", "Junior Coaching", "Adult Beginner", "Tournament Prep", "Cardio Tennis" },
-            ClubType.MultiSport => new[] { "Team Practice", "Skills Training", "Youth Program", "Shooting Clinic", "Game Night", "Defensive Drills" },
-            ClubType.Swimming => new[] { "Lap Swimming", "Learn to Swim", "Masters Training", "Water Aerobics", "Competitive Squad", "Open Swim" },
-            _ => new[] { "General Session", "Training", "Practice" }
-        };
-
-        var categories = new[] { SessionCategory.AllAges, SessionCategory.Juniors, SessionCategory.Seniors, SessionCategory.Beginners, SessionCategory.Advanced };
-
-        // Create sessions for the next 30 days
-        for (int day = 0; day < 30; day++)
-        {
-            var date = DateTime.UtcNow.Date.AddDays(day);
-            var sessionsPerDay = random.Next(3, 8);
-
-            for (int s = 0; s < sessionsPerDay; s++)
-            {
-                var venue = venues[random.Next(venues.Count)];
-                var hour = 7 + (s * 2);
-                if (hour > 20) continue;
-
-                var session = new Session
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = clubId,
-                    VenueId = venue.Id,
-                    Title = sessionTitles[random.Next(sessionTitles.Length)],
-                    Description = $"Regular training session",
-                    StartTime = date.AddHours(hour),
-                    EndTime = date.AddHours(hour + 1.5),
-                    Capacity = venue.Capacity ?? random.Next(8, 20),
-                    CurrentBookings = 0,
-                    SessionFee = random.Next(2) == 0 ? null : random.Next(5, 20),
-                    IsCancelled = false,
-                    Category = categories[random.Next(categories.Length)]
-                };
-                sessions.Add(session);
-            }
-        }
-
-        // Create some past sessions
-        for (int day = 1; day <= 14; day++)
-        {
-            var date = DateTime.UtcNow.Date.AddDays(-day);
-            var sessionsPerDay = random.Next(2, 5);
-
-            for (int s = 0; s < sessionsPerDay; s++)
-            {
-                var venue = venues[random.Next(venues.Count)];
-                var hour = 9 + (s * 3);
-
-                var session = new Session
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = clubId,
-                    VenueId = venue.Id,
-                    Title = sessionTitles[random.Next(sessionTitles.Length)],
-                    Description = $"Completed training session",
-                    StartTime = date.AddHours(hour),
-                    EndTime = date.AddHours(hour + 1.5),
-                    Capacity = venue.Capacity ?? random.Next(10, 20),
-                    CurrentBookings = random.Next(5, 15),
-                    SessionFee = random.Next(2) == 0 ? null : random.Next(5, 15),
-                    IsCancelled = false,
-                    Category = categories[random.Next(categories.Length)]
-                };
-                sessions.Add(session);
-            }
-        }
-
-        return sessions;
-    }
-
-    private List<RecurringSchedule> CreateRecurringSchedules(Guid clubId, List<Venue> venues, ClubType clubType)
-    {
-        var schedules = new List<RecurringSchedule>();
-        var random = new Random(42);
-
-        var scheduleTitles = clubType switch
-        {
-            ClubType.Tennis => new[] { "Morning Tennis", "Evening League", "Junior Academy", "Ladies Social" },
-            ClubType.MultiSport => new[] { "Morning Hoops", "After-School Program", "Adult League", "Weekend Warriors" },
-            ClubType.Swimming => new[] { "Early Bird Swim", "Lunch Swim", "Evening Squad", "Masters Practice" },
-            _ => new[] { "Regular Session", "Weekly Practice" }
-        };
-
-        var categories = new[] { SessionCategory.AllAges, SessionCategory.Juniors, SessionCategory.Seniors, SessionCategory.Mixed };
-
-        foreach (var title in scheduleTitles)
-        {
-            var venue = venues[random.Next(venues.Count)];
-            var schedule = new RecurringSchedule
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                VenueId = venue.Id,
-                Title = title,
-                Description = $"Weekly {title.ToLower()} sessions",
-                DayOfWeek = (DayOfWeek)random.Next(0, 7),
-                StartTime = TimeSpan.FromHours(7 + random.Next(0, 12)),
-                EndTime = TimeSpan.FromHours(8 + random.Next(1, 13)),
-                Capacity = venue.Capacity ?? random.Next(10, 25),
-                SessionFee = random.Next(3) == 0 ? null : random.Next(10, 30),
-                IsActive = true,
-                ScheduleStartDate = DateTime.UtcNow.AddMonths(-6),
-                ScheduleEndDate = DateTime.UtcNow.AddMonths(6),
-                Category = categories[random.Next(categories.Length)]
-            };
-            schedules.Add(schedule);
-        }
-
-        return schedules;
-    }
-
-    private List<Event> CreateEvents(Guid clubId, List<Venue> venues, ClubType clubType)
-    {
-        var events = new List<Event>();
-        var random = new Random(42);
-
-        var eventData = clubType switch
-        {
-            ClubType.Tennis => new[] { ("Summer Championship", EventType.Tournament), ("Club Open Day", EventType.Social), ("Junior Tournament", EventType.Competition), ("Mixed Doubles Night", EventType.Social), ("Charity Tennis Marathon", EventType.Fundraiser) },
-            ClubType.MultiSport => new[] { ("3v3 Tournament", EventType.Tournament), ("Skills Challenge", EventType.Competition), ("Family Fun Day", EventType.Social), ("Alumni Game", EventType.Social), ("Youth Championship", EventType.Tournament) },
-            ClubType.Swimming => new[] { ("Gala Competition", EventType.Competition), ("Open Water Day", EventType.Social), ("Learn to Swim Week", EventType.Training), ("Masters Meet", EventType.Competition), ("Swim-a-thon Fundraiser", EventType.Fundraiser) },
-            _ => new[] { ("Club Championship", EventType.Tournament), ("Open Day", EventType.Social), ("Annual Gala", EventType.Social) }
-        };
-
-        foreach (var (title, type) in eventData)
-        {
-            var venue = venues[random.Next(venues.Count)];
-            var daysFromNow = random.Next(-30, 90);
-            var startDate = DateTime.UtcNow.Date.AddDays(daysFromNow).AddHours(10);
-
-            var evt = new Event
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                VenueId = venue.Id,
-                Title = title,
-                Description = $"Join us for the {title}! A great opportunity to participate and meet other members.",
-                Type = type,
-                StartDateTime = startDate,
-                EndDateTime = startDate.AddHours(random.Next(3, 8)),
-                Location = venue.Name,
-                Capacity = random.Next(50, 200),
-                CurrentAttendees = daysFromNow < 0 ? random.Next(30, 100) : random.Next(0, 50),
-                IsTicketed = random.Next(3) != 0,
-                TicketPrice = random.Next(3) == 0 ? null : random.Next(10, 50),
-                MemberTicketPrice = random.Next(3) == 0 ? null : random.Next(5, 40),
-                RequiresRSVP = true,
-                RSVPDeadline = startDate.AddDays(-7),
-                IsCancelled = false,
-                IsPublished = daysFromNow > -30,
-                ImageUrl = null
-            };
-
-            events.Add(evt);
-        }
-
-        return events;
-    }
-
-    private void CreateEventTickets(Guid clubId, List<Event> events, List<Member> members)
-    {
-        var random = new Random(42);
-        var activeMembers = members.Where(m => m.Status == MemberStatus.Active).ToList();
-        if (activeMembers.Count == 0) return;
-
-        foreach (var evt in events)
-        {
-            var daysFromNow = (evt.StartDateTime - DateTime.UtcNow).TotalDays;
-
-            // Create some tickets for past events
-            if (daysFromNow < 0)
-            {
-                for (int t = 0; t < random.Next(10, 30); t++)
-                {
-                    var member = activeMembers[random.Next(activeMembers.Count)];
-                    var ticket = new EventTicket
-                    {
-                        Id = Guid.NewGuid(),
-                        ClubId = clubId,
-                        EventId = evt.Id,
-                        MemberId = member.Id,
-                        TicketCode = $"TKT-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-                        PurchasedAt = evt.StartDateTime.AddDays(-random.Next(1, 30)),
-                        Quantity = random.Next(1, 4),
-                        UnitPrice = evt.TicketPrice ?? 0,
-                        TotalAmount = (evt.TicketPrice ?? 0) * random.Next(1, 4),
-                        IsUsed = true,
-                        UsedAt = evt.StartDateTime.AddMinutes(random.Next(0, 60))
-                    };
-                    _context.EventTickets.Add(ticket);
-                }
-            }
-        }
-    }
-
-    private void CreateBookings(List<Member> members, List<Session> sessions)
-    {
-        var random = new Random(42);
-        var activeMembers = members.Where(m => m.Status == MemberStatus.Active).ToList();
-        var futureSessions = sessions.Where(s => s.StartTime > DateTime.UtcNow && !s.IsCancelled).ToList();
-
-        foreach (var session in futureSessions.Take(50))
-        {
-            var bookingCount = random.Next(1, Math.Min(session.Capacity, 8));
-            var selectedMembers = activeMembers.OrderBy(_ => random.Next()).Take(bookingCount).ToList();
-
-            foreach (var member in selectedMembers)
-            {
-                var booking = new SessionBooking
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = session.ClubId,
-                    SessionId = session.Id,
-                    MemberId = member.Id,
-                    BookedAt = DateTime.UtcNow.AddDays(-random.Next(1, 7)),
-                    Status = BookingStatus.Confirmed
-                };
-                _context.SessionBookings.Add(booking);
-                session.CurrentBookings++;
-            }
-
-            // Add some to waitlist if session is full
-            if (session.CurrentBookings >= session.Capacity && random.Next(3) == 0)
-            {
-                var waitlistMember = activeMembers.FirstOrDefault(m => !selectedMembers.Contains(m));
-                if (waitlistMember != null)
-                {
-                    var waitlist = new Waitlist
-                    {
-                        Id = Guid.NewGuid(),
-                        ClubId = session.ClubId,
-                        SessionId = session.Id,
-                        MemberId = waitlistMember.Id,
-                        Position = 1,
-                        JoinedAt = DateTime.UtcNow.AddDays(-random.Next(1, 5)),
-                        NotificationSent = false
-                    };
-                    _context.Waitlists.Add(waitlist);
-                }
-            }
-        }
-    }
-
-    private List<Payment> CreatePayments(Guid clubId, List<Member> members, List<MembershipType> membershipTypes)
-    {
-        var payments = new List<Payment>();
-        var random = new Random(42);
-
-        foreach (var member in members.Where(m => m.Status == MemberStatus.Active))
-        {
-            // Membership payment
-            var membershipType = membershipTypes[random.Next(membershipTypes.Count)];
-            var membershipPayment = new Payment
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                MemberId = member.Id,
-                Amount = membershipType.AnnualFee,
-                Currency = "GBP",
-                Status = PaymentStatus.Completed,
-                Method = random.Next(2) == 0 ? PaymentMethod.Stripe : PaymentMethod.BankTransfer,
-                Type = PaymentType.Membership,
-                Description = $"{membershipType.Name} membership payment",
-                PaymentDate = member.JoinedDate.AddDays(random.Next(0, 7)),
-                ProcessedDate = member.JoinedDate.AddDays(random.Next(0, 7)),
-                StripePaymentIntentId = $"pi_{Guid.NewGuid().ToString()[..24]}",
-                ReceiptNumber = $"RCP-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}"
-            };
-            payments.Add(membershipPayment);
-
-            // Some additional payments
-            if (random.Next(3) == 0)
-            {
-                var sessionPayment = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = clubId,
-                    MemberId = member.Id,
-                    Amount = random.Next(10, 50),
-                    Currency = "GBP",
-                    Status = PaymentStatus.Completed,
-                    Method = PaymentMethod.Stripe,
-                    Type = PaymentType.SessionFee,
-                    Description = "Session booking payment",
-                    PaymentDate = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
-                    ProcessedDate = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
-                    StripePaymentIntentId = $"pi_{Guid.NewGuid().ToString()[..24]}",
-                    ReceiptNumber = $"RCP-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}"
-                };
-                payments.Add(sessionPayment);
-            }
-
-            if (random.Next(4) == 0)
-            {
-                var eventPayment = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    ClubId = clubId,
-                    MemberId = member.Id,
-                    Amount = random.Next(20, 100),
-                    Currency = "GBP",
-                    Status = PaymentStatus.Completed,
-                    Method = PaymentMethod.Stripe,
-                    Type = PaymentType.EventTicket,
-                    Description = "Event ticket purchase",
-                    PaymentDate = DateTime.UtcNow.AddDays(-random.Next(1, 60)),
-                    ProcessedDate = DateTime.UtcNow.AddDays(-random.Next(1, 60)),
-                    StripePaymentIntentId = $"pi_{Guid.NewGuid().ToString()[..24]}",
-                    ReceiptNumber = $"RCP-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}"
-                };
-                payments.Add(eventPayment);
-            }
-        }
-
-        // Add some pending/failed payments for realism
-        var pendingMember = members.FirstOrDefault(m => m.Status == MemberStatus.Active);
-        if (pendingMember != null)
-        {
-            payments.Add(new Payment
-            {
-                Id = Guid.NewGuid(),
-                ClubId = clubId,
-                MemberId = pendingMember.Id,
-                Amount = 39.99m,
-                Currency = "GBP",
-                Status = PaymentStatus.Pending,
-                Method = PaymentMethod.Stripe,
-                Type = PaymentType.Membership,
-                Description = "Membership renewal - pending",
-                PaymentDate = DateTime.UtcNow.AddDays(-2)
-            });
-        }
-
-        return payments;
+        _context.ClubSettings.Add(settings);
     }
 }
