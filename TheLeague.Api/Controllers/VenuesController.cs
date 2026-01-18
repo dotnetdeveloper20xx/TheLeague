@@ -6,26 +6,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class VenuesController : ControllerBase
+public class VenuesController : BaseApiController
 {
     private readonly IVenueService _venueService;
-    private readonly ITenantService _tenantService;
 
     public VenuesController(IVenueService venueService, ITenantService tenantService)
+        : base(tenantService)
     {
         _venueService = venueService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
     }
 
     [HttpGet]

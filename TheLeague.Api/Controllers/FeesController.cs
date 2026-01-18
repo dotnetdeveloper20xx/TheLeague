@@ -7,29 +7,18 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class FeesController : ControllerBase
+public class FeesController : BaseApiController
 {
     private readonly IFeeService _feeService;
-    private readonly ITenantService _tenantService;
 
     public FeesController(IFeeService feeService, ITenantService tenantService)
+        : base(tenantService)
     {
         _feeService = feeService;
-        _tenantService = tenantService;
     }
 
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
-    }
-
-    private string? GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
+    private new string? GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
 
     /// <summary>
     /// Get all fees with optional filtering and pagination

@@ -6,26 +6,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize(Roles = "ClubManager,SuperAdmin")]
-public class MembershipsController : ControllerBase
+public class MembershipsController : BaseApiController
 {
     private readonly IMembershipService _membershipService;
-    private readonly ITenantService _tenantService;
 
     public MembershipsController(IMembershipService membershipService, ITenantService tenantService)
+        : base(tenantService)
     {
         _membershipService = membershipService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
     }
 
     [HttpGet]

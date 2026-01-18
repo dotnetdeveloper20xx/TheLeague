@@ -6,34 +6,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class EventsController : ControllerBase
+public class EventsController : BaseApiController
 {
     private readonly IEventService _eventService;
-    private readonly ITenantService _tenantService;
 
     public EventsController(IEventService eventService, ITenantService tenantService)
+        : base(tenantService)
     {
         _eventService = eventService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
-    }
-
-    private Guid GetMemberId()
-    {
-        var memberIdClaim = User.FindFirst("memberId")?.Value;
-        if (Guid.TryParse(memberIdClaim, out var memberId))
-            return memberId;
-        return Guid.Empty;
     }
 
     [HttpGet]
@@ -98,7 +79,7 @@ public class EventsController : ControllerBase
     public async Task<ActionResult<EventRSVPDto>> RSVP(Guid id, [FromBody] RSVPRequest request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var rsvp = await _eventService.RSVPToEventAsync(clubId, id, memberId, request);
         return Ok(rsvp);
     }
@@ -107,7 +88,7 @@ public class EventsController : ControllerBase
     public async Task<ActionResult<EventTicketDto>> PurchaseTicket(Guid id, [FromBody] PurchaseTicketRequest request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var ticket = await _eventService.PurchaseTicketAsync(clubId, id, memberId, request);
         return Ok(ticket);
     }

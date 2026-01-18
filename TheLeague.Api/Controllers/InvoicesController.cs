@@ -6,29 +6,18 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class InvoicesController : ControllerBase
+public class InvoicesController : BaseApiController
 {
     private readonly IInvoiceService _invoiceService;
-    private readonly ITenantService _tenantService;
 
     public InvoicesController(IInvoiceService invoiceService, ITenantService tenantService)
+        : base(tenantService)
     {
         _invoiceService = invoiceService;
-        _tenantService = tenantService;
     }
 
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
-    }
-
-    private string? GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
+    private new string? GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
 
     /// <summary>
     /// Get all invoices with filtering and pagination

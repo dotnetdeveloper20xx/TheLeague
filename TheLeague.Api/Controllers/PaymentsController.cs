@@ -7,26 +7,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class PaymentsController : ControllerBase
+public class PaymentsController : BaseApiController
 {
     private readonly IPaymentService _paymentService;
-    private readonly ITenantService _tenantService;
 
     public PaymentsController(IPaymentService paymentService, ITenantService tenantService)
+        : base(tenantService)
     {
         _paymentService = paymentService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
     }
 
     [HttpGet]

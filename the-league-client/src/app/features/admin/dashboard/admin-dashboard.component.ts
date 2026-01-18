@@ -1,8 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
+import { Subject, takeUntil } from 'rxjs';
 import { ClubService } from '../../../core/services/club.service';
 import { LoadingSpinnerComponent } from '../../../shared/components';
 import { Club, PagedResult } from '../../../core/models';
@@ -178,8 +179,9 @@ import { Club, PagedResult } from '../../../core/models';
     </div>
   `
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   private clubService = inject(ClubService);
+  private destroy$ = new Subject<void>();
 
   isLoading = signal(true);
   clubs = signal<Club[]>([]);
@@ -239,8 +241,13 @@ export class AdminDashboardComponent implements OnInit {
     this.loadDashboard();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   private loadDashboard(): void {
-    this.clubService.getClubs({ page: 1, pageSize: 10 }).subscribe({
+    this.clubService.getClubs({ page: 1, pageSize: 10 }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (result: PagedResult<Club>) => {
         this.clubs.set(result.items);
 

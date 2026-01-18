@@ -19,17 +19,23 @@ public class AuthService : IAuthService
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly ILogger<AuthService> _logger;
+    private readonly bool _requireEmailVerification;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         IConfiguration configuration,
-        IEmailService emailService)
+        IEmailService emailService,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _context = context;
         _configuration = configuration;
         _emailService = emailService;
+        _logger = logger;
+        // Allow disabling email verification for demo/development via config
+        _requireEmailVerification = configuration.GetValue<bool>("Auth:RequireEmailVerification", true);
     }
 
     public async Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request)
@@ -75,13 +81,14 @@ public class AuthService : IAuthService
             LastName = request.LastName,
             ClubId = request.ClubId,
             Role = request.ClubId.HasValue ? UserRole.Member : UserRole.SuperAdmin,
-            EmailConfirmed = true // For demo purposes
+            EmailConfirmed = !_requireEmailVerification // Only skip verification if explicitly disabled in config
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            _logger.LogWarning("User registration failed for {Email}: {Errors}", request.Email, errors);
             return new ApiResponse<RegisterResponse>(false, errors, null);
         }
 
@@ -99,7 +106,7 @@ public class AuthService : IAuthService
                 Phone = request.Phone,
                 Status = MemberStatus.Pending,
                 JoinedDate = DateTime.UtcNow,
-                EmailVerified = true
+                EmailVerified = !_requireEmailVerification
             };
 
             _context.Members.Add(member);
@@ -108,8 +115,27 @@ public class AuthService : IAuthService
             await _userManager.UpdateAsync(user);
         }
 
+        // Send verification email if required
+        if (_requireEmailVerification)
+        {
+            try
+            {
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                await _emailService.SendEmailVerificationAsync(request.Email, token);
+                _logger.LogInformation("Verification email sent to {Email}", request.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send verification email to {Email}", request.Email);
+                // Don't fail registration if email fails - user can request resend
+            }
+        }
+
         var userDto = await MapToUserDto(user);
-        return new ApiResponse<RegisterResponse>(true, "Registration successful", new RegisterResponse(true, null, userDto));
+        var message = _requireEmailVerification
+            ? "Registration successful. Please check your email to verify your account."
+            : "Registration successful";
+        return new ApiResponse<RegisterResponse>(true, message, new RegisterResponse(true, null, userDto));
     }
 
     public async Task<ApiResponse<LoginResponse>> RefreshTokenAsync(RefreshTokenRequest request)
@@ -281,12 +307,19 @@ public class AuthService : IAuthService
             if (securityToken is not JwtSecurityToken jwtSecurityToken ||
                 !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
             {
+                _logger.LogWarning("Token validation failed: Invalid security algorithm");
                 return null;
             }
             return principal;
         }
-        catch
+        catch (SecurityTokenException ex)
         {
+            _logger.LogWarning(ex, "Security token validation failed");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during token validation");
             return null;
         }
     }

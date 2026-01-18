@@ -35,7 +35,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? "TheLeagueSecretKey2024VeryLongAndSecure!");
+var jwtSecret = jwtSettings["Secret"]
+    ?? throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json or environment variables.");
+if (jwtSecret.Length < 32)
+    throw new InvalidOperationException("JWT Secret must be at least 32 characters long for security.");
+var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -152,6 +156,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure pipeline
+// Global exception handling - must be first in pipeline
+app.UseExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

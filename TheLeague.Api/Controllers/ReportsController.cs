@@ -6,31 +6,20 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize(Roles = "ClubManager,SuperAdmin")]
-public class ReportsController : ControllerBase
+public class ReportsController : BaseApiController
 {
     private readonly IReportService _reportService;
     private readonly IEventService _eventService;
-    private readonly ITenantService _tenantService;
 
     public ReportsController(
         IReportService reportService,
         IEventService eventService,
         ITenantService tenantService)
+        : base(tenantService)
     {
         _reportService = reportService;
         _eventService = eventService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
     }
 
     // Angular expects /api/reports/membership

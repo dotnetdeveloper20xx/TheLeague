@@ -6,26 +6,16 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
 [Route("api/recurring-schedules")]
 [Authorize(Roles = "ClubManager,SuperAdmin")]
-public class RecurringSchedulesController : ControllerBase
+public class RecurringSchedulesController : BaseApiController
 {
     private readonly ISessionService _sessionService;
-    private readonly ITenantService _tenantService;
 
     public RecurringSchedulesController(ISessionService sessionService, ITenantService tenantService)
+        : base(tenantService)
     {
         _sessionService = sessionService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
     }
 
     [HttpGet]

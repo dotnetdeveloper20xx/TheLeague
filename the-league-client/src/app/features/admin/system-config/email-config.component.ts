@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { SystemConfigService } from '../../../core/services/system-config.service';
 import { SystemConfiguration, UpdateSystemConfigurationRequest, ProviderTestResult } from '../../../core/models/system-config.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
@@ -182,9 +183,10 @@ import { NotificationService } from '../../../core/services/notification.service
     </div>
   `
 })
-export class EmailConfigComponent implements OnInit {
+export class EmailConfigComponent implements OnInit, OnDestroy {
   private configService = inject(SystemConfigService);
   private notificationService = inject(NotificationService);
+  private destroy$ = new Subject<void>();
 
   config = signal<SystemConfiguration | null>(null);
   isLoading = signal(true);
@@ -205,9 +207,14 @@ export class EmailConfigComponent implements OnInit {
     this.loadConfiguration();
   }
 
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadConfiguration() {
     this.isLoading.set(true);
-    this.configService.getConfiguration().subscribe({
+    this.configService.getConfiguration().pipe(takeUntil(this.destroy$)).subscribe({
       next: (config) => {
         this.config.set(config);
         this.selectedProvider.set(config.emailProvider);
@@ -217,8 +224,8 @@ export class EmailConfigComponent implements OnInit {
         this.defaultFromName = config.defaultFromName;
         this.isLoading.set(false);
       },
-      error: (error) => {
-        console.error('Failed to load configuration', error);
+      error: () => {
+        this.notificationService.error('Failed to load configuration');
         this.isLoading.set(false);
       }
     });
@@ -247,7 +254,7 @@ export class EmailConfigComponent implements OnInit {
 
     this.isTesting.set(true);
     this.testResult.set(null);
-    this.configService.sendTestEmail({ toEmail: this.testEmailAddress }).subscribe({
+    this.configService.sendTestEmail({ toEmail: this.testEmailAddress }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (result) => {
         this.testResult.set(result);
         this.isTesting.set(false);
@@ -275,15 +282,14 @@ export class EmailConfigComponent implements OnInit {
       defaultFromName: this.defaultFromName
     };
 
-    this.configService.updateConfiguration(request).subscribe({
+    this.configService.updateConfiguration(request).pipe(takeUntil(this.destroy$)).subscribe({
       next: (config) => {
         this.config.set(config);
         this.originalProvider = config.emailProvider;
         this.isSaving.set(false);
         this.notificationService.success('Email settings saved successfully');
       },
-      error: (error) => {
-        console.error('Failed to save configuration', error);
+      error: () => {
         this.isSaving.set(false);
         this.notificationService.error('Failed to save email settings');
       }

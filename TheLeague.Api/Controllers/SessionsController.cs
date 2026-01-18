@@ -6,34 +6,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
-public class SessionsController : ControllerBase
+public class SessionsController : BaseApiController
 {
     private readonly ISessionService _sessionService;
-    private readonly ITenantService _tenantService;
 
     public SessionsController(ISessionService sessionService, ITenantService tenantService)
+        : base(tenantService)
     {
         _sessionService = sessionService;
-        _tenantService = tenantService;
-    }
-
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
-    }
-
-    private Guid GetMemberId()
-    {
-        var memberIdClaim = User.FindFirst("memberId")?.Value;
-        if (Guid.TryParse(memberIdClaim, out var memberId))
-            return memberId;
-        return Guid.Empty;
     }
 
     [HttpGet]
@@ -99,7 +80,7 @@ public class SessionsController : ControllerBase
     public async Task<ActionResult<SessionBookingDto>> Book(Guid id, [FromBody] BookSessionRequest request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var booking = await _sessionService.BookSessionAsync(clubId, id, memberId, request);
         return Ok(booking);
     }
@@ -108,7 +89,7 @@ public class SessionsController : ControllerBase
     public async Task<ActionResult> CancelBooking(Guid id, [FromQuery] Guid? familyMemberId)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var result = await _sessionService.CancelBookingAsync(clubId, id, memberId, familyMemberId);
         if (!result)
             return NotFound();
@@ -137,7 +118,7 @@ public class SessionsController : ControllerBase
     public async Task<ActionResult<WaitlistDto>> JoinWaitlist(Guid id, [FromQuery] Guid? familyMemberId)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var entry = await _sessionService.JoinWaitlistAsync(clubId, id, memberId, familyMemberId);
         return Ok(entry);
     }
@@ -146,7 +127,7 @@ public class SessionsController : ControllerBase
     public async Task<ActionResult> LeaveWaitlist(Guid id, [FromQuery] Guid? familyMemberId)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberId() ?? Guid.Empty;
         var result = await _sessionService.LeaveWaitlistAsync(clubId, id, memberId, familyMemberId);
         if (!result)
             return NotFound();

@@ -7,17 +7,15 @@ using TheLeague.Infrastructure.Data;
 
 namespace TheLeague.Api.Controllers;
 
-[ApiController]
 [Route("api/portal")]
 [Authorize(Roles = "Member,ClubManager,SuperAdmin")]
-public class PortalController : ControllerBase
+public class PortalController : BaseApiController
 {
     private readonly IMemberService _memberService;
     private readonly IMembershipService _membershipService;
     private readonly IPaymentService _paymentService;
     private readonly ISessionService _sessionService;
     private readonly IEventService _eventService;
-    private readonly ITenantService _tenantService;
 
     public PortalController(
         IMemberService memberService,
@@ -26,36 +24,22 @@ public class PortalController : ControllerBase
         ISessionService sessionService,
         IEventService eventService,
         ITenantService tenantService)
+        : base(tenantService)
     {
         _memberService = memberService;
         _membershipService = membershipService;
         _paymentService = paymentService;
         _sessionService = sessionService;
         _eventService = eventService;
-        _tenantService = tenantService;
     }
 
-    private Guid GetClubId()
-    {
-        var clubIdClaim = User.FindFirst("clubId")?.Value;
-        if (Guid.TryParse(clubIdClaim, out var clubId))
-            return clubId;
-        return _tenantService.CurrentTenantId ?? Guid.Empty;
-    }
-
-    private Guid GetMemberId()
-    {
-        var memberIdClaim = User.FindFirst("memberId")?.Value;
-        if (Guid.TryParse(memberIdClaim, out var memberId))
-            return memberId;
-        return Guid.Empty;
-    }
+    private Guid GetMemberIdValue() => GetMemberId() ?? Guid.Empty;
 
     [HttpGet("dashboard")]
     public async Task<ActionResult<MemberPortalDashboardDto>> GetDashboard()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var profile = await _memberService.GetMemberByIdAsync(clubId, memberId);
         if (profile == null)
@@ -121,7 +105,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<MemberDto>> GetProfile()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var member = await _memberService.GetMemberByIdAsync(clubId, memberId);
         if (member == null)
@@ -133,7 +117,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<MemberDto>> UpdateProfile([FromBody] ProfileUpdateRequest request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var updateRequest = new MemberUpdateRequest(
             request.FirstName,
@@ -162,7 +146,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<IEnumerable<MembershipDto>>> GetMemberships()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var memberships = await _membershipService.GetMemberMembershipsAsync(clubId, memberId);
         return Ok(memberships);
@@ -172,7 +156,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<IEnumerable<PaymentDto>>> GetPayments()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var payments = await _paymentService.GetMemberPaymentsAsync(clubId, memberId);
         return Ok(payments);
@@ -182,7 +166,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<IEnumerable<FamilyMemberDto>>> GetFamily()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var family = await _memberService.GetFamilyMembersAsync(clubId, memberId);
         return Ok(family);
@@ -192,7 +176,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<FamilyMemberDto>> AddFamilyMember([FromBody] FamilyMemberCreateRequest request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var member = await _memberService.AddFamilyMemberAsync(clubId, memberId, request);
         return Ok(member);
@@ -202,7 +186,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> UploadProfilePhoto(IFormFile file)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         // In a real app, save the file and update member
         var url = $"/uploads/members/{memberId}/photo{Path.GetExtension(file.FileName)}";
@@ -225,7 +209,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> GetMySessionBookings()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var bookings = await _sessionService.GetMemberBookingsAsync(clubId, memberId);
         return Ok(bookings);
@@ -235,7 +219,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> BookSession(Guid sessionId, [FromBody] SessionBookRequest? request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         try
         {
@@ -253,7 +237,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> CancelSessionBooking(Guid sessionId, [FromQuery] Guid? familyMemberId)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var result = await _sessionService.CancelBookingAsync(clubId, sessionId, memberId, familyMemberId);
         if (!result)
@@ -278,7 +262,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> GetMyEventRegistrations()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var tickets = await _eventService.GetMemberTicketsAsync(clubId, memberId);
         return Ok(tickets);
@@ -288,7 +272,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> RegisterForEvent(Guid eventId, [FromBody] EventRegistrationRequest? request)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         try
         {
@@ -326,7 +310,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> CancelEventRegistration(Guid eventId)
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         // Cancel RSVP by setting response to NotAttending
         var evt = await _eventService.GetEventByIdAsync(clubId, eventId);
@@ -346,7 +330,7 @@ public class PortalController : ControllerBase
     [HttpGet("notifications")]
     public async Task<ActionResult> GetNotifications()
     {
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         // Return mock notifications
         var notifications = new List<object>
@@ -376,7 +360,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult> GetMyBookings()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var recurringBookings = await _sessionService.GetMemberRecurringBookingsAsync(clubId, memberId);
 
@@ -392,7 +376,7 @@ public class PortalController : ControllerBase
     public async Task<ActionResult<IEnumerable<EventTicketDto>>> GetMyTickets()
     {
         var clubId = GetClubId();
-        var memberId = GetMemberId();
+        var memberId = GetMemberIdValue();
 
         var tickets = await _eventService.GetMemberTicketsAsync(clubId, memberId);
         return Ok(tickets);
