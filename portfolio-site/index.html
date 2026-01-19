@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The League - Enterprise Sports Club Management Platform</title>
+    <meta name="description" content="A comprehensive multi-tenant SaaS platform for managing sports club memberships, sessions, events, and payments. Built with ASP.NET Core 8 and Angular 19.">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <span class="logo-icon">&#9889;</span>
+                The League
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#screenshots">Screenshots</a></li>
+                <li><a href="#tech-stack">Tech Stack</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#demo">Demo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+            <div class="hero-badge">Multi-Tenant SaaS Platform</div>
+            <h1>The League</h1>
+            <p class="hero-tagline">Enterprise Sports Club Management Platform</p>
+            <p class="hero-description">
+                A comprehensive platform that transforms how sports clubs manage their operations.
+                Replace spreadsheets and paper-based systems with a unified digital solution for
+                member management, session booking, event coordination, and payment processing.
+            </p>
+            <div class="hero-tech-badges">
+                <span class="tech-badge dotnet">.NET 8</span>
+                <span class="tech-badge angular">Angular 19</span>
+                <span class="tech-badge sql">SQL Server</span>
+                <span class="tech-badge tailwind">Tailwind CSS</span>
+                <span class="tech-badge typescript">TypeScript</span>
+            </div>
+            <div class="hero-buttons">
+                <a href="#demo" class="btn btn-primary">View Demo Credentials</a>
+                <a href="#screenshots" class="btn btn-secondary">See Screenshots</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+        <div class="container">
+            <h2 class="section-title">Project Overview</h2>
+
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon problem">&#10067;</div>
+                    <h3>The Problem</h3>
+                    <p>Sports clubs traditionally rely on spreadsheets, paper records, WhatsApp groups, and disconnected systems to manage memberships, bookings, events, and finances. This leads to data inconsistency, administrative overhead, poor member experience, and difficulty tracking payments.</p>
+                </div>
+
+                <div class="overview-card">
+                    <div class="card-icon solution">&#10003;</div>
+                    <h3>The Solution</h3>
+                    <p>The League provides a unified platform with three distinct portals - Super Admin for platform management, Club Manager for operational control, and Member Portal for self-service. It automates member lifecycle management, session booking with capacity control, event ticketing, and payment tracking.</p>
+                </div>
+
+                <div class="overview-card">
+                    <div class="card-icon users">&#128101;</div>
+                    <h3>Target Users</h3>
+                    <ul>
+                        <li><strong>Platform Admins</strong> - Manage multiple clubs and system configuration</li>
+                        <li><strong>Club Managers</strong> - Handle daily operations, members, sessions, events</li>
+                        <li><strong>Members</strong> - Self-service for bookings, payments, and family management</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-number">50+</span>
+                    <span class="stat-label">Domain Entities</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">80+</span>
+                    <span class="stat-label">API Endpoints</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">100+</span>
+                    <span class="stat-label">Features</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">User Roles</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">4</span>
+                    <span class="stat-label">.NET Projects</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">Key Features</h2>
+            <p class="section-subtitle">Comprehensive functionality for complete club management</p>
+
+            <div class="features-grid">
+                <!-- Authentication -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128274;</div>
+                    <h3>Authentication & Security</h3>
+                    <ul>
+                        <li>JWT tokens with refresh rotation</li>
+                        <li>Role-based access control (5 roles)</li>
+                        <li>Email verification flow</li>
+                        <li>Password reset functionality</li>
+                        <li>Multi-tenant data isolation</li>
+                    </ul>
+                </div>
+
+                <!-- Member Management -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128100;</div>
+                    <h3>Member Management</h3>
+                    <ul>
+                        <li>Complete member profiles</li>
+                        <li>Auto-generated member numbers</li>
+                        <li>Status workflow management</li>
+                        <li>Medical & emergency contacts</li>
+                        <li>Document uploads & notes</li>
+                    </ul>
+                </div>
+
+                <!-- Family Management -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128106;</div>
+                    <h3>Family Accounts</h3>
+                    <ul>
+                        <li>Link family members to accounts</li>
+                        <li>Book sessions for children</li>
+                        <li>Relationship tracking</li>
+                        <li>Family membership types</li>
+                        <li>Unified billing</li>
+                    </ul>
+                </div>
+
+                <!-- Session Scheduling -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128197;</div>
+                    <h3>Session Scheduling</h3>
+                    <ul>
+                        <li>Create sessions with capacity limits</li>
+                        <li>Multiple session categories</li>
+                        <li>Online booking by members</li>
+                        <li>Waitlist management</li>
+                        <li>Recurring schedule templates</li>
+                    </ul>
+                </div>
+
+                <!-- Event Management -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#127881;</div>
+                    <h3>Event Management</h3>
+                    <ul>
+                        <li>Social events & tournaments</li>
+                        <li>Ticketed events with pricing</li>
+                        <li>RSVP tracking</li>
+                        <li>Event registration limits</li>
+                        <li>Check-in functionality</li>
+                    </ul>
+                </div>
+
+                <!-- Payments -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128179;</div>
+                    <h3>Payment Processing</h3>
+                    <ul>
+                        <li>Multiple payment methods</li>
+                        <li>Stripe & PayPal integration</li>
+                        <li>Invoice generation</li>
+                        <li>Payment reminders</li>
+                        <li>Receipt generation</li>
+                    </ul>
+                </div>
+
+                <!-- Memberships -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#127941;</div>
+                    <h3>Membership Plans</h3>
+                    <ul>
+                        <li>Configurable membership types</li>
+                        <li>Multiple billing cycles</li>
+                        <li>Discounts & promotions</li>
+                        <li>Membership freeze/cancel</li>
+                        <li>Auto-renewal options</li>
+                    </ul>
+                </div>
+
+                <!-- Competitions -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#127942;</div>
+                    <h3>Competition Management</h3>
+                    <ul>
+                        <li>Leagues & tournaments</li>
+                        <li>Team registration</li>
+                        <li>Match scheduling</li>
+                        <li>Results & standings</li>
+                        <li>Fixtures management</li>
+                    </ul>
+                </div>
+
+                <!-- Reporting -->
+                <div class="feature-card">
+                    <div class="feature-icon">&#128202;</div>
+                    <h3>Reports & Analytics</h3>
+                    <ul>
+                        <li>Club dashboard with KPIs</li>
+                        <li>Financial reports</li>
+                        <li>Membership reports</li>
+                        <li>Attendance tracking</li>
+                        <li>Export capabilities</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="section">
+        <div class="container">
+            <h2 class="section-title">Screenshots</h2>
+            <p class="section-subtitle">Clean, modern interface designed for all devices</p>
+
+            <div class="screenshots-tabs">
+                <button class="tab-btn active" data-tab="portal">Member Portal</button>
+                <button class="tab-btn" data-tab="mobile">Mobile Views</button>
+            </div>
+
+            <div class="screenshots-content">
+                <!-- Portal Screenshots -->
+                <div class="tab-content active" id="portal">
+                    <div class="screenshot-grid">
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/17-portal-dashboard.png" alt="Member Portal Dashboard" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Member Dashboard</h4>
+                                <p>Personal dashboard showing upcoming sessions, events, family members, and recent payments</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/18-portal-sessions.png" alt="Session Booking" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Session Booking</h4>
+                                <p>Browse available training sessions with pricing, availability, and instant booking</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/20-portal-payments.png" alt="Payment History" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Payment History</h4>
+                                <p>View complete payment history with dates, descriptions, amounts, and status</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/21-portal-family.png" alt="Family Members" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Family Members</h4>
+                                <p>Manage family member accounts with status tracking and quick actions</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/22-portal-profile.png" alt="Member Profile" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Member Profile</h4>
+                                <p>Comprehensive profile management including personal info, address, and emergency contacts</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card">
+                            <img src="../docs/screenshots/23-portal-settings.png" alt="Portal Settings" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Settings</h4>
+                                <p>Configure notification preferences and account settings</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Screenshots -->
+                <div class="tab-content" id="mobile">
+                    <div class="screenshot-grid mobile-grid">
+                        <div class="screenshot-card mobile">
+                            <img src="../docs/screenshots/36-mobile-login.png" alt="Mobile Login" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Mobile Login</h4>
+                                <p>Touch-friendly mobile login with modern gradient design</p>
+                            </div>
+                        </div>
+
+                        <div class="screenshot-card mobile">
+                            <img src="../docs/screenshots/37-mobile-dashboard.png" alt="Mobile Dashboard" loading="lazy">
+                            <div class="screenshot-info">
+                                <h4>Mobile Dashboard</h4>
+                                <p>Responsive club dashboard optimised for mobile devices</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section id="tech-stack" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">Technology Stack</h2>
+            <p class="section-subtitle">Enterprise-grade technologies for scalability and maintainability</p>
+
+            <div class="tech-stack-grid">
+                <!-- Backend -->
+                <div class="tech-category">
+                    <h3>Backend</h3>
+                    <div class="tech-list">
+                        <div class="tech-item">
+                            <span class="tech-name">.NET 8</span>
+                            <span class="tech-purpose">Runtime</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">ASP.NET Core 8</span>
+                            <span class="tech-purpose">Web API Framework</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">Entity Framework Core 8</span>
+                            <span class="tech-purpose">ORM / Data Access</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">SQL Server 2022</span>
+                            <span class="tech-purpose">Database</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">ASP.NET Identity</span>
+                            <span class="tech-purpose">Authentication</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">JWT Bearer</span>
+                            <span class="tech-purpose">Token Authentication</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">Swagger/OpenAPI</span>
+                            <span class="tech-purpose">API Documentation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frontend -->
+                <div class="tech-category">
+                    <h3>Frontend</h3>
+                    <div class="tech-list">
+                        <div class="tech-item">
+                            <span class="tech-name">Angular 19</span>
+                            <span class="tech-purpose">SPA Framework</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">TypeScript 5.7</span>
+                            <span class="tech-purpose">Type-safe JavaScript</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">Tailwind CSS 3.4</span>
+                            <span class="tech-purpose">Utility-first CSS</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">RxJS 7.8</span>
+                            <span class="tech-purpose">Reactive Extensions</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">Chart.js</span>
+                            <span class="tech-purpose">Data Visualisation</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">Playwright</span>
+                            <span class="tech-purpose">E2E Testing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integrations -->
+                <div class="tech-category">
+                    <h3>Integrations</h3>
+                    <div class="tech-list">
+                        <div class="tech-item">
+                            <span class="tech-name">Stripe</span>
+                            <span class="tech-purpose">Payment Processing</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">PayPal</span>
+                            <span class="tech-purpose">Payment Processing</span>
+                        </div>
+                        <div class="tech-item">
+                            <span class="tech-name">SendGrid</span>
+                            <span class="tech-purpose">Email Delivery</span>
+                        </div>
+                    </div>
+                    <p class="tech-note">All providers use Factory Pattern for easy swapping and mock implementations</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="section">
+        <div class="container">
+            <h2 class="section-title">Architecture</h2>
+            <p class="section-subtitle">Clean Architecture with enterprise patterns</p>
+
+            <div class="architecture-diagram">
+                <div class="arch-layer presentation">
+                    <h4>Presentation Layer</h4>
+                    <p>Angular 19 SPA (Standalone Components)</p>
+                    <span class="arch-tech">Tailwind CSS | RxJS | Reactive Forms | Route Guards</span>
+                </div>
+                <div class="arch-arrow">&#8595; HTTP/REST API &#8595;</div>
+                <div class="arch-layer application">
+                    <h4>Application Layer</h4>
+                    <p>ASP.NET Core 8 Web API</p>
+                    <span class="arch-tech">Controllers | Services | DTOs | Middleware | Providers</span>
+                </div>
+                <div class="arch-arrow">&#8595;</div>
+                <div class="arch-layer domain">
+                    <h4>Domain Layer</h4>
+                    <p>Business Logic & Entities</p>
+                    <span class="arch-tech">50+ Entities | Enums | Business Rules</span>
+                </div>
+                <div class="arch-arrow">&#8595;</div>
+                <div class="arch-layer infrastructure">
+                    <h4>Infrastructure Layer</h4>
+                    <p>Data Access & External Services</p>
+                    <span class="arch-tech">Entity Framework Core 8 | SQL Server | Tenant Service</span>
+                </div>
+            </div>
+
+            <div class="architecture-features">
+                <div class="arch-feature">
+                    <h4>Multi-Tenancy</h4>
+                    <p>Complete data isolation via ClubId discriminator on all queries. Single deployment serves unlimited clubs.</p>
+                </div>
+                <div class="arch-feature">
+                    <h4>Security</h4>
+                    <p>JWT authentication with 15-min access tokens and 7-day refresh tokens. Role-based access control with 5 distinct roles.</p>
+                </div>
+                <div class="arch-feature">
+                    <h4>Provider Pattern</h4>
+                    <p>Factory pattern for payment and email providers enables easy swapping between Stripe/PayPal and SendGrid/Mock.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Roles Section -->
+    <section id="roles" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">User Roles</h2>
+            <p class="section-subtitle">Five distinct roles with specific permissions</p>
+
+            <div class="roles-grid">
+                <div class="role-card superadmin">
+                    <div class="role-header">
+                        <span class="role-icon">&#128081;</span>
+                        <h3>Super Admin</h3>
+                    </div>
+                    <p class="role-desc">Platform owner managing all clubs</p>
+                    <ul>
+                        <li>Manage all clubs on platform</li>
+                        <li>Create/delete clubs</li>
+                        <li>Platform-wide analytics</li>
+                        <li>System configuration</li>
+                        <li>Provider management</li>
+                    </ul>
+                </div>
+
+                <div class="role-card clubmanager">
+                    <div class="role-header">
+                        <span class="role-icon">&#128188;</span>
+                        <h3>Club Manager</h3>
+                    </div>
+                    <p class="role-desc">Club administrator/committee member</p>
+                    <ul>
+                        <li>Full member CRUD</li>
+                        <li>Session & event management</li>
+                        <li>Payment recording</li>
+                        <li>Reports & analytics</li>
+                        <li>Club settings</li>
+                    </ul>
+                </div>
+
+                <div class="role-card member">
+                    <div class="role-header">
+                        <span class="role-icon">&#128100;</span>
+                        <h3>Member</h3>
+                    </div>
+                    <p class="role-desc">Regular club member</p>
+                    <ul>
+                        <li>Self-service portal</li>
+                        <li>Book sessions</li>
+                        <li>Register for events</li>
+                        <li>View payment history</li>
+                        <li>Manage family members</li>
+                    </ul>
+                </div>
+
+                <div class="role-card coach">
+                    <div class="role-header">
+                        <span class="role-icon">&#127939;</span>
+                        <h3>Coach</h3>
+                    </div>
+                    <p class="role-desc">Coaching staff</p>
+                    <ul>
+                        <li>View assigned sessions</li>
+                        <li>Take attendance</li>
+                        <li>View member profiles</li>
+                        <li>Member portal access</li>
+                    </ul>
+                </div>
+
+                <div class="role-card staff">
+                    <div class="role-header">
+                        <span class="role-icon">&#128119;</span>
+                        <h3>Staff</h3>
+                    </div>
+                    <p class="role-desc">Club staff member</p>
+                    <ul>
+                        <li>View member list</li>
+                        <li>Check-in members</li>
+                        <li>View schedules</li>
+                        <li>Basic operations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section id="api" class="section">
+        <div class="container">
+            <h2 class="section-title">API Endpoints</h2>
+            <p class="section-subtitle">80+ RESTful endpoints organised by domain</p>
+
+            <div class="api-grid">
+                <div class="api-category">
+                    <h4>Authentication</h4>
+                    <code>/api/auth/*</code>
+                    <ul>
+                        <li>POST /register</li>
+                        <li>POST /login</li>
+                        <li>POST /refresh</li>
+                        <li>POST /forgot-password</li>
+                        <li>POST /reset-password</li>
+                        <li>GET /me</li>
+                    </ul>
+                </div>
+
+                <div class="api-category">
+                    <h4>Admin</h4>
+                    <code>/api/admin/*</code>
+                    <ul>
+                        <li>GET/POST /clubs</li>
+                        <li>GET/PUT/DELETE /clubs/{id}</li>
+                        <li>GET /clubs/{id}/stats</li>
+                        <li>GET /dashboard</li>
+                    </ul>
+                </div>
+
+                <div class="api-category">
+                    <h4>Members</h4>
+                    <code>/api/members/*</code>
+                    <ul>
+                        <li>GET/POST /members</li>
+                        <li>GET/PUT/DELETE /{id}</li>
+                        <li>GET /{id}/family</li>
+                        <li>POST /{id}/notes</li>
+                    </ul>
+                </div>
+
+                <div class="api-category">
+                    <h4>Sessions</h4>
+                    <code>/api/sessions/*</code>
+                    <ul>
+                        <li>GET/POST /sessions</li>
+                        <li>GET/PUT/DELETE /{id}</li>
+                        <li>GET /{id}/bookings</li>
+                        <li>POST /{id}/book</li>
+                    </ul>
+                </div>
+
+                <div class="api-category">
+                    <h4>Events</h4>
+                    <code>/api/events/*</code>
+                    <ul>
+                        <li>GET/POST /events</li>
+                        <li>GET/PUT/DELETE /{id}</li>
+                        <li>GET /{id}/registrations</li>
+                        <li>POST /{id}/register</li>
+                    </ul>
+                </div>
+
+                <div class="api-category">
+                    <h4>Member Portal</h4>
+                    <code>/api/portal/*</code>
+                    <ul>
+                        <li>GET /dashboard</li>
+                        <li>GET/PUT /profile</li>
+                        <li>GET/POST /family</li>
+                        <li>GET /sessions/upcoming</li>
+                        <li>POST /sessions/{id}/book</li>
+                        <li>GET /payments</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">Demo Credentials</h2>
+            <p class="section-subtitle">Try the platform with these test accounts</p>
+
+            <div class="demo-grid">
+                <div class="demo-card superadmin">
+                    <h4>&#128081; Super Admin</h4>
+                    <div class="credentials">
+                        <div class="credential">
+                            <span class="label">Email:</span>
+                            <code>admin@theleague.com</code>
+                        </div>
+                        <div class="credential">
+                            <span class="label">Password:</span>
+                            <code>Admin123!</code>
+                        </div>
+                    </div>
+                    <p class="demo-hint">Explore: Platform dashboard, club management, system analytics</p>
+                </div>
+
+                <div class="demo-card manager">
+                    <h4>&#128188; Club Managers</h4>
+                    <table class="credentials-table">
+                        <tr>
+                            <td>Teddington Cricket Club</td>
+                            <td><code>chairman@teddingtoncc.com</code></td>
+                            <td><code>Chairman123!</code></td>
+                        </tr>
+                        <tr>
+                            <td>Highbury United FC</td>
+                            <td><code>chairman@highburyunited.com</code></td>
+                            <td><code>Chairman123!</code></td>
+                        </tr>
+                        <tr>
+                            <td>Richmond Hockey Club</td>
+                            <td><code>president@richmondhockey.org.uk</code></td>
+                            <td><code>President123!</code></td>
+                        </tr>
+                    </table>
+                    <p class="demo-hint">Explore: Club dashboard, members, sessions, events, payments</p>
+                </div>
+
+                <div class="demo-card member">
+                    <h4>&#128100; Members</h4>
+                    <table class="credentials-table">
+                        <tr>
+                            <td>Teddington CC</td>
+                            <td><code>james.anderson@email.com</code></td>
+                            <td><code>Member123!</code></td>
+                        </tr>
+                        <tr>
+                            <td>Highbury FC</td>
+                            <td><code>marcus.rashford@email.com</code></td>
+                            <td><code>Member123!</code></td>
+                        </tr>
+                        <tr>
+                            <td>Richmond HC</td>
+                            <td><code>sam.ward@email.com</code></td>
+                            <td><code>Member123!</code></td>
+                        </tr>
+                    </table>
+                    <p class="demo-hint">Explore: Member portal, session booking, family management</p>
+                </div>
+            </div>
+
+            <div class="demo-data-info">
+                <h4>Test Data Highlights</h4>
+                <ul>
+                    <li><strong>4 fully configured clubs</strong> (Cricket, Football, Hockey)</li>
+                    <li><strong>50+ members</strong> across all clubs</li>
+                    <li><strong>Multiple membership types</strong> per club</li>
+                    <li><strong>Sessions</strong> scheduled over next 30 days</li>
+                    <li><strong>Events</strong> including social gatherings and tournaments</li>
+                    <li><strong>Payment history</strong> demonstrating financial tracking</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Section -->
+    <section id="why" class="section">
+        <div class="container">
+            <h2 class="section-title">Why This Project Stands Out</h2>
+            <p class="section-subtitle">Demonstrating senior .NET development capabilities</p>
+
+            <div class="differentiators-grid">
+                <div class="diff-card">
+                    <span class="diff-number">01</span>
+                    <h4>True Multi-Tenancy</h4>
+                    <p>Complete data isolation via ClubId discriminator. Single codebase serving unlimited clubs with no cross-tenant data leakage.</p>
+                </div>
+
+                <div class="diff-card">
+                    <span class="diff-number">02</span>
+                    <h4>Rich Domain Model</h4>
+                    <p>50+ domain entities with proper relationships, navigation properties, and enum-driven status workflows. Domain-driven design thinking.</p>
+                </div>
+
+                <div class="diff-card">
+                    <span class="diff-number">03</span>
+                    <h4>Clean Architecture</h4>
+                    <p>4 .NET projects with clear separation: API, Core, Infrastructure, Tests. Dependency inversion with testable service layer.</p>
+                </div>
+
+                <div class="diff-card">
+                    <span class="diff-number">04</span>
+                    <h4>Modern Angular 19</h4>
+                    <p>Standalone components (no NgModules), lazy-loaded routes, reactive forms, HTTP interceptors. Latest Angular patterns.</p>
+                </div>
+
+                <div class="diff-card">
+                    <span class="diff-number">05</span>
+                    <h4>Provider Factory Pattern</h4>
+                    <p>Payment and email providers with factory pattern. Easy swapping between Stripe/PayPal and mock implementations.</p>
+                </div>
+
+                <div class="diff-card">
+                    <span class="diff-number">06</span>
+                    <h4>Enterprise Security</h4>
+                    <p>JWT with refresh rotation, RBAC with 5 roles, tenant isolation, audit logging, and ASP.NET Identity integration.</p>
+                </div>
+            </div>
+
+            <div class="patterns-used">
+                <h4>Enterprise Patterns Demonstrated</h4>
+                <div class="pattern-tags">
+                    <span class="pattern-tag">Repository Pattern</span>
+                    <span class="pattern-tag">Unit of Work</span>
+                    <span class="pattern-tag">Factory Pattern</span>
+                    <span class="pattern-tag">Dependency Injection</span>
+                    <span class="pattern-tag">Guard Pattern</span>
+                    <span class="pattern-tag">Interceptor Pattern</span>
+                    <span class="pattern-tag">DTO Pattern</span>
+                    <span class="pattern-tag">Multi-Tenancy</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">&#9889;</span>
+                    <span>The League</span>
+                </div>
+                <p>Enterprise Multi-Tenant Sports Club Management Platform</p>
+                <p class="footer-tech">Built with .NET 8 | Angular 19 | SQL Server | Tailwind CSS</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 DotNetDeveloper Portfolio. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
