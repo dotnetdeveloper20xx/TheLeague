@@ -249,34 +249,45 @@ public class DatabaseSeeder
         // Seed club managers
         await SeedClubManagersAsync();
 
-        // Seed data for the first club (the demo club)
-        var firstClubId = _clubIdMap.Values.First();
-        var firstClubSeedId = _clubIdMap.Keys.First();
+        // Seed data for ALL clubs to demonstrate multi-tenant SaaS
+        foreach (var clubEntry in _clubIdMap)
+        {
+            var seedClubId = clubEntry.Key;
+            var clubId = clubEntry.Value;
 
-        await SeedMembershipTypesAsync(firstClubId, firstClubSeedId);
-        await SeedVenuesAsync(firstClubId, firstClubSeedId);
-        await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeding data for club: {ClubId}", seedClubId);
 
-        await SeedMembersAsync(firstClubId, firstClubSeedId);
-        await _context.SaveChangesAsync();
+            await SeedMembershipTypesAsync(clubId, seedClubId);
+            await SeedVenuesAsync(clubId, seedClubId);
+            await _context.SaveChangesAsync();
 
-        await SeedFeesAsync(firstClubId, firstClubSeedId);
-        await SeedRecurringSchedulesAsync(firstClubId, firstClubSeedId);
-        await SeedSessionsAsync(firstClubId, firstClubSeedId);
-        await SeedEventsAsync(firstClubId, firstClubSeedId);
-        await _context.SaveChangesAsync();
+            await SeedMembersAsync(clubId, seedClubId);
+            await _context.SaveChangesAsync();
 
-        await SeedCompetitionsAsync(firstClubId, firstClubSeedId);
-        await SeedPaymentsAsync(firstClubId);
-        await SeedInvoicesAsync(firstClubId);
+            await SeedFeesAsync(clubId, seedClubId);
+            await SeedRecurringSchedulesAsync(clubId, seedClubId);
+            await SeedSessionsAsync(clubId, seedClubId);
+            await SeedEventsAsync(clubId, seedClubId);
+            await _context.SaveChangesAsync();
+
+            await SeedCompetitionsAsync(clubId, seedClubId);
+            await _context.SaveChangesAsync();
+
+            // Seed communication templates for each club
+            SeedCommunicationTemplates(clubId);
+            await _context.SaveChangesAsync();
+        }
+
+        // Seed payments and invoices (these reference members across all clubs)
+        foreach (var clubEntry in _clubIdMap)
+        {
+            await SeedPaymentsAsync(clubEntry.Value);
+            await SeedInvoicesAsync(clubEntry.Value);
+        }
         await _context.SaveChangesAsync();
 
         // Create bookings for sessions
         CreateBookings();
-        await _context.SaveChangesAsync();
-
-        // Seed communication templates
-        SeedCommunicationTemplates(firstClubId);
         await _context.SaveChangesAsync();
     }
 
