@@ -14,15 +14,9 @@ A comprehensive multi-tenant SaaS platform for managing sports club memberships,
 
 - [Overview](#overview)
 - [Key Features](#key-features)
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
-- [Screenshots](#screenshots)
-  - [Authentication](#authentication)
-  - [Super Admin Portal](#super-admin-portal)
-  - [Club Manager Portal](#club-manager-portal)
-  - [Member Portal](#member-portal)
-  - [Forms](#forms)
-  - [Responsive Design](#responsive-design)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
@@ -64,24 +58,85 @@ The platform operates as a true multi-tenant SaaS solution where:
 - System-wide user administration
 - Platform analytics and reporting
 - Global configuration management
+- Payment and email provider configuration
+- Feature flag management
 
 ### For Club Managers
-- **Member Management** - Complete member lifecycle from registration to renewal
-- **Session Scheduling** - Training sessions with booking and attendance
-- **Event Planning** - Club events with ticketing and RSVPs
-- **Payment Processing** - Record payments, generate invoices, track outstanding balances
-- **Membership Types** - Configurable membership categories with pricing
-- **Venue Management** - Facility booking and resource allocation
-- **Reporting** - Financial and membership analytics
-- **Club Settings** - Branding, notifications, and operational configuration
+| Feature | Description |
+|---------|-------------|
+| **Member Management** | Complete member lifecycle from registration to renewal |
+| **Session Scheduling** | Training sessions with booking and attendance tracking |
+| **Event Planning** | Club events with ticketing and RSVPs |
+| **Payment Processing** | Record payments, generate invoices, track outstanding balances |
+| **Membership Types** | Configurable membership categories with pricing |
+| **Venue Management** | Facility booking and resource allocation |
+| **Competition Management** | Leagues, tournaments, standings, and statistics |
+| **Reporting** | Financial and membership analytics |
+| **Club Settings** | Branding, notifications, and operational configuration |
 
 ### For Members
-- **Self-Service Portal** - View and update personal information
-- **Session Booking** - Browse and book available training sessions
-- **Event Registration** - Discover and register for club events
-- **Payment History** - View invoices and payment records
-- **Family Management** - Manage family member accounts
-- **Notifications** - Stay informed about club activities
+| Feature | Description |
+|---------|-------------|
+| **Self-Service Portal** | View and update personal information |
+| **Session Booking** | Browse and book available training sessions |
+| **Event Registration** | Discover and register for club events |
+| **Payment History** | View invoices and payment records |
+| **Family Management** | Manage family member accounts |
+| **Notifications** | Stay informed about club activities |
+
+---
+
+## Screenshots
+
+### Member Portal
+
+The member portal provides a self-service experience for club members to manage their activities.
+
+#### Member Dashboard
+*Personal dashboard showing upcoming sessions, events, family members, and recent payments*
+
+![Member Portal Dashboard](docs/screenshots/17-portal-dashboard.png)
+
+#### Session Booking
+*Browse available training sessions with pricing, availability, and instant booking*
+
+![Session Booking](docs/screenshots/18-portal-sessions.png)
+
+#### Payment History
+*View complete payment history with dates, descriptions, amounts, and status*
+
+![Payment History](docs/screenshots/20-portal-payments.png)
+
+#### Family Members
+*Manage family member accounts with status tracking and quick actions*
+
+![Family Members](docs/screenshots/21-portal-family.png)
+
+#### Member Profile
+*Comprehensive profile management including personal info, address, emergency contacts, and medical information*
+
+![Member Profile](docs/screenshots/22-portal-profile.png)
+
+#### Settings
+*Configure notification preferences and account settings*
+
+![Portal Settings](docs/screenshots/23-portal-settings.png)
+
+---
+
+### Responsive Design
+
+The platform is fully responsive and optimised for all device sizes.
+
+#### Mobile Login
+*Touch-friendly mobile login with demo credentials display*
+
+![Mobile Login](docs/screenshots/36-mobile-login.png)
+
+#### Mobile Dashboard
+*Responsive club dashboard optimised for mobile devices*
+
+![Mobile Dashboard](docs/screenshots/37-mobile-dashboard.png)
 
 ---
 
@@ -91,375 +146,84 @@ The platform follows **Clean Architecture** principles with clear separation of 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Presentation                             │
+│                         Presentation                            │
 │  ┌─────────────────────────────────────────────────────────────┐│
-│  │              Angular 19 SPA (Standalone Components)          ││
-│  │    Tailwind CSS | RxJS | Reactive Forms | Route Guards       ││
+│  │              Angular 19 SPA (Standalone Components)         ││
+│  │    Tailwind CSS | RxJS | Reactive Forms | Route Guards      ││
 │  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
-                                  │
-                            HTTP/REST API
-                                  │
+                                │
+                          HTTP/REST API
+                                │
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Application Layer                         │
+│                        Application Layer                        │
 │  ┌─────────────────────────────────────────────────────────────┐│
-│  │                    ASP.NET Core 8 Web API                    ││
-│  │   Controllers | Services | DTOs | Middleware | Providers     ││
+│  │                    ASP.NET Core 8 Web API                   ││
+│  │   Controllers | Services | DTOs | Middleware | Providers    ││
 │  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
-                                  │
+                                │
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Domain Layer                             │
+│                         Domain Layer                            │
 │  ┌─────────────────────────────────────────────────────────────┐│
-│  │           Entities | Enums | Business Rules                  ││
+│  │           Entities | Enums | Business Rules                 ││
 │  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
-                                  │
+                                │
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Infrastructure Layer                        │
+│                      Infrastructure Layer                       │
 │  ┌─────────────────────────────────────────────────────────────┐│
-│  │    Entity Framework Core 8 | SQL Server | Tenant Service     ││
+│  │    Entity Framework Core 8 | SQL Server | Tenant Service    ││
 │  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Security Model
 
-- **JWT Authentication** with refresh token rotation
-- **Role-Based Access Control** (SuperAdmin, ClubManager, Member, Coach, Staff)
-- **Tenant Isolation** via ClubId discriminator on all queries
-- **CORS Protection** with configurable origins
-- **Password Policy** enforcement via ASP.NET Identity
+| Feature | Implementation |
+|---------|----------------|
+| **Authentication** | JWT Bearer tokens with refresh token rotation |
+| **Authorisation** | Role-Based Access Control (SuperAdmin, ClubManager, Member, Coach, Staff) |
+| **Tenant Isolation** | ClubId discriminator on all database queries |
+| **CORS Protection** | Configurable allowed origins |
+| **Password Policy** | ASP.NET Identity with strength requirements |
+| **Token Expiry** | 15-minute access tokens, 7-day refresh tokens |
 
 ---
 
 ## Technology Stack
 
 ### Backend
+
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | ASP.NET Core | 8.0 | Web API Framework |
 | Entity Framework Core | 8.0 | ORM / Data Access |
 | SQL Server | 2022 | Database |
-| ASP.NET Identity | 8.0 | Authentication |
+| ASP.NET Identity | 8.0 | Authentication & User Management |
 | JWT Bearer | - | Token Authentication |
 | Swagger/OpenAPI | - | API Documentation |
 
 ### Frontend
+
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Angular | 19.2 | SPA Framework |
 | TypeScript | 5.7 | Type-safe JavaScript |
 | Tailwind CSS | 3.4 | Utility-first CSS |
 | RxJS | 7.8 | Reactive Extensions |
+| Chart.js | - | Data Visualisation |
 | Playwright | - | E2E Testing |
 
 ### External Integrations
-| Provider | Purpose | Status |
-|----------|---------|--------|
-| Stripe | Payment Processing | Mock/Production |
-| PayPal | Payment Processing | Mock/Production |
-| SendGrid | Email Delivery | Mock/Production |
 
----
+| Provider | Purpose | Implementation |
+|----------|---------|----------------|
+| Stripe | Payment Processing | Provider Factory Pattern |
+| PayPal | Payment Processing | Provider Factory Pattern |
+| SendGrid | Email Delivery | Provider Factory Pattern |
 
-## Screenshots
-
-### Authentication
-
-<details>
-<summary><strong>Login Page</strong></summary>
-
-![Login Page](docs/screenshots/24-login-page.png)
-
-*Secure login with email and password authentication*
-</details>
-
-<details>
-<summary><strong>Registration Page</strong></summary>
-
-![Registration Page](docs/screenshots/25-register-page.png)
-
-*New user registration with validation*
-</details>
-
-<details>
-<summary><strong>Forgot Password</strong></summary>
-
-![Forgot Password](docs/screenshots/26-forgot-password.png)
-
-*Password reset request flow*
-</details>
-
----
-
-### Super Admin Portal
-
-Platform administrators have access to system-wide management capabilities.
-
-<details>
-<summary><strong>Admin Dashboard</strong></summary>
-
-![Admin Dashboard](docs/screenshots/01-admin-dashboard.png)
-
-*Platform overview with key metrics across all clubs*
-</details>
-
-<details>
-<summary><strong>Clubs Management</strong></summary>
-
-![Clubs List](docs/screenshots/02-admin-clubs-list.png)
-
-*Manage all sports clubs on the platform*
-</details>
-
-<details>
-<summary><strong>Users Management</strong></summary>
-
-![Users Management](docs/screenshots/03-admin-users.png)
-
-*System-wide user administration*
-</details>
-
-<details>
-<summary><strong>Platform Reports</strong></summary>
-
-![Admin Reports](docs/screenshots/04-admin-reports.png)
-
-*Cross-platform analytics and reporting*
-</details>
-
-<details>
-<summary><strong>System Settings</strong></summary>
-
-![Admin Settings](docs/screenshots/05-admin-settings.png)
-
-*Global platform configuration*
-</details>
-
----
-
-### Club Manager Portal
-
-Club managers have comprehensive tools for managing their organisation.
-
-<details>
-<summary><strong>Club Dashboard</strong></summary>
-
-![Club Dashboard](docs/screenshots/06-club-dashboard.png)
-
-*Club overview with member counts, upcoming sessions, and recent activity*
-</details>
-
-<details>
-<summary><strong>Members List</strong></summary>
-
-![Members List](docs/screenshots/07a-club-members-list.png)
-
-*Comprehensive member directory with search and filtering*
-</details>
-
-<details>
-<summary><strong>Member Search</strong></summary>
-
-![Member Search](docs/screenshots/07b-club-members-search.png)
-
-*Advanced member search functionality*
-</details>
-
-<details>
-<summary><strong>Member Detail</strong></summary>
-
-![Member Detail](docs/screenshots/08-club-member-detail.png)
-
-*Complete member profile with history and relationships*
-</details>
-
-<details>
-<summary><strong>Sessions Management</strong></summary>
-
-![Sessions List](docs/screenshots/09a-club-sessions-list.png)
-
-*Training session scheduling and management*
-</details>
-
-<details>
-<summary><strong>Events Management</strong></summary>
-
-![Events List](docs/screenshots/10-club-events-list.png)
-
-*Club event planning and coordination*
-</details>
-
-<details>
-<summary><strong>Payments</strong></summary>
-
-![Payments](docs/screenshots/11-club-payments.png)
-
-*Payment recording and financial tracking*
-</details>
-
-<details>
-<summary><strong>Memberships</strong></summary>
-
-![Memberships](docs/screenshots/12-club-memberships.png)
-
-*Active membership management*
-</details>
-
-<details>
-<summary><strong>Membership Types</strong></summary>
-
-![Membership Types](docs/screenshots/13-club-membership-types.png)
-
-*Configurable membership categories and pricing*
-</details>
-
-<details>
-<summary><strong>Venues</strong></summary>
-
-![Venues](docs/screenshots/14-club-venues.png)
-
-*Facility and venue management*
-</details>
-
-<details>
-<summary><strong>Club Reports</strong></summary>
-
-![Club Reports](docs/screenshots/15-club-reports.png)
-
-*Club-specific analytics and reporting*
-</details>
-
-<details>
-<summary><strong>Club Settings</strong></summary>
-
-![Club Settings](docs/screenshots/16-club-settings.png)
-
-*Club configuration and branding*
-</details>
-
----
-
-### Member Portal
-
-Members have access to a self-service portal for managing their club activities.
-
-<details>
-<summary><strong>Portal Dashboard</strong></summary>
-
-![Portal Dashboard](docs/screenshots/17-portal-dashboard.png)
-
-*Member's personal dashboard*
-</details>
-
-<details>
-<summary><strong>Available Sessions</strong></summary>
-
-![Portal Sessions](docs/screenshots/18-portal-sessions.png)
-
-*Browse and book training sessions*
-</details>
-
-<details>
-<summary><strong>Upcoming Events</strong></summary>
-
-![Portal Events](docs/screenshots/19-portal-events.png)
-
-*Discover and register for club events*
-</details>
-
-<details>
-<summary><strong>Payment History</strong></summary>
-
-![Portal Payments](docs/screenshots/20-portal-payments.png)
-
-*View invoices and payment records*
-</details>
-
-<details>
-<summary><strong>Family Members</strong></summary>
-
-![Portal Family](docs/screenshots/21-portal-family.png)
-
-*Manage family member accounts*
-</details>
-
-<details>
-<summary><strong>My Profile</strong></summary>
-
-![Portal Profile](docs/screenshots/22-portal-profile.png)
-
-*View and update personal information*
-</details>
-
-<details>
-<summary><strong>Portal Settings</strong></summary>
-
-![Portal Settings](docs/screenshots/23-portal-settings.png)
-
-*Personal preferences and notifications*
-</details>
-
----
-
-### Forms
-
-Data entry forms with validation and user-friendly interfaces.
-
-<details>
-<summary><strong>Create Member Form</strong></summary>
-
-![Create Member Form](docs/screenshots/27-create-member-form.png)
-
-*Comprehensive member registration form*
-</details>
-
-<details>
-<summary><strong>Create Session Form</strong></summary>
-
-![Create Session Form](docs/screenshots/28-create-session-form.png)
-
-*Training session creation with capacity and pricing*
-</details>
-
-<details>
-<summary><strong>Create Event Form</strong></summary>
-
-![Create Event Form](docs/screenshots/29-create-event-form.png)
-
-*Event planning with details and ticketing*
-</details>
-
----
-
-### Responsive Design
-
-The platform is fully responsive across all device sizes.
-
-<details>
-<summary><strong>Mobile - Login</strong></summary>
-
-![Mobile Login](docs/screenshots/36-mobile-login.png)
-
-*Mobile-optimised login experience*
-</details>
-
-<details>
-<summary><strong>Mobile - Dashboard</strong></summary>
-
-![Mobile Dashboard](docs/screenshots/37-mobile-dashboard.png)
-
-*Touch-friendly mobile dashboard*
-</details>
-
-<details>
-<summary><strong>Tablet - Members</strong></summary>
-
-![Tablet Members](docs/screenshots/38-tablet-members.png)
-
-*Tablet-optimised member management*
-</details>
+*All external providers use a factory pattern allowing mock implementations for development and testing.*
 
 ---
 
@@ -506,6 +270,14 @@ Application will be available at `http://localhost:4200`
 http://localhost:7000/swagger
 ```
 
+### Application URLs
+
+| Component | URL |
+|-----------|-----|
+| Frontend | http://localhost:4200 |
+| API | http://localhost:7000 |
+| Swagger API Docs | http://localhost:7000/swagger |
+
 ---
 
 ## Project Structure
@@ -513,36 +285,41 @@ http://localhost:7000/swagger
 ```
 LeagueMembershipManagementPortal/
 ├── TheLeague.Api/                    # ASP.NET Core Web API
-│   ├── Controllers/                  # API Endpoints
-│   ├── Services/                     # Business Logic
+│   ├── Controllers/                  # API Endpoints (20+ controllers)
+│   ├── Services/                     # Business Logic (18+ services)
 │   ├── DTOs/                         # Data Transfer Objects
-│   ├── Middleware/                   # Request Pipeline
-│   ├── Providers/                    # External Integrations
-│   └── Program.cs                    # Application Entry Point
+│   ├── Middleware/                   # Request Pipeline & Tenant Resolution
+│   ├── Providers/                    # Payment & Email Provider Factories
+│   └── Program.cs                    # Application Entry Point & DI Configuration
 │
 ├── TheLeague.Core/                   # Domain Layer
-│   ├── Entities/                     # Domain Models
-│   └── Enums/                        # Enumeration Types
+│   ├── Entities/                     # Domain Models (50+ entities)
+│   ├── Enums/                        # Enumeration Types
+│   └── Interfaces/                   # Service Contracts
 │
 ├── TheLeague.Infrastructure/         # Data Access Layer
 │   └── Data/
-│       ├── ApplicationDbContext.cs   # EF Core Context
-│       ├── Migrations/               # Database Migrations
-│       └── TenantService.cs          # Multi-tenancy Support
+│       ├── ApplicationDbContext.cs   # EF Core Context with 50+ DbSets
+│       ├── Migrations/               # Database Schema Migrations
+│       └── TenantService.cs          # Multi-tenancy Implementation
 │
 ├── TheLeague.Tests/                  # Test Projects
 │
-├── the-league-client/                # Angular Frontend
+├── the-league-client/                # Angular Frontend (SPA)
 │   └── src/app/
-│       ├── core/                     # Services, Guards, Interceptors
+│       ├── core/                     # Services, Guards, Interceptors, Models
 │       ├── features/                 # Feature Modules
-│       ├── shared/                   # Reusable Components
-│       └── layouts/                  # Page Layouts
+│       │   ├── admin/                # Super Admin Portal
+│       │   ├── auth/                 # Authentication (Login, Register, Password Reset)
+│       │   ├── club/                 # Club Manager Portal
+│       │   └── portal/               # Member Self-Service Portal
+│       ├── shared/                   # Reusable Components & Pipes
+│       └── layouts/                  # Page Layouts (Admin, Portal, Auth)
 │
 ├── docs/                             # Documentation Assets
 │   └── screenshots/                  # Application Screenshots
 │
-├── onboarding/                       # Developer Onboarding Guides
+├── onboarding/                       # Developer Onboarding Guides (11 documents)
 │
 └── seedData.json                     # Demo Data Configuration
 ```
@@ -562,14 +339,23 @@ http://localhost:7000/swagger
 |----------|--------|-------------|
 | `/api/auth/login` | POST | User authentication |
 | `/api/auth/refresh-token` | POST | Refresh JWT token |
+| `/api/auth/register` | POST | User registration |
 | `/api/members` | GET/POST | Member management |
 | `/api/members/{id}` | GET/PUT/DELETE | Individual member operations |
 | `/api/sessions` | GET/POST | Session management |
 | `/api/sessions/{id}/book` | POST | Book a session |
 | `/api/events` | GET/POST | Event management |
+| `/api/events/{id}/register` | POST | Register for an event |
 | `/api/payments` | GET/POST | Payment recording |
+| `/api/invoices` | GET/POST | Invoice management |
 | `/api/club/dashboard` | GET | Club dashboard data |
+| `/api/portal/dashboard` | GET | Member portal dashboard |
 | `/api/admin/clubs` | GET/POST | Platform club management |
+| `/api/admin/dashboard` | GET | Admin platform dashboard |
+| `/api/competitions` | GET/POST | Competition management |
+| `/api/memberships` | GET/POST | Membership management |
+| `/api/venues` | GET/POST | Venue management |
+| `/api/reports/*` | GET | Various report endpoints |
 
 ---
 
@@ -578,23 +364,27 @@ http://localhost:7000/swagger
 The platform includes seed data with the following demo accounts:
 
 ### Platform Administrator
+
 | Role | Email | Password |
 |------|-------|----------|
 | Super Admin | admin@theleague.com | Admin123! |
 
 ### Club Managers
+
 | Club | Email | Password |
 |------|-------|----------|
 | Teddington Cricket Club | chairman@teddingtoncc.com | Chairman123! |
-| Highbury United FC | president@highburyfc.com | President123! |
-| Richmond Hockey Club | secretary@richmondhc.com | Secretary123! |
-| Wimbledon Rugby Club | chairman@wimbledonrfc.com | Chairman123! |
+| Highbury United FC | chairman@highburyunited.com | Chairman123! |
+| Richmond Hockey Club | president@richmondhockey.org.uk | President123! |
+| Marylebone Cricket Club | chairman@marylebone.com | Chairman123! |
 
 ### Members
+
 | Club | Email | Password |
 |------|-------|----------|
 | Teddington CC | james.anderson@email.com | Member123! |
 | Highbury FC | marcus.rashford@email.com | Member123! |
+| Richmond HC | sam.ward@email.com | Member123! |
 
 ---
 
@@ -616,6 +406,72 @@ Comprehensive developer documentation is available in the `/onboarding` director
 | [09_SUPPORT_KNOWLEDGE.md](onboarding/09_SUPPORT_KNOWLEDGE.md) | Troubleshooting guide |
 | [10_DEVELOPMENT_WORKFLOW.md](onboarding/10_DEVELOPMENT_WORKFLOW.md) | Development workflow |
 
+### Additional Documentation
+
+- **`/project-docs/`** - Detailed feature documentation
+- **`applicationFeatures.md`** - Complete feature inventory
+- **`the-league-client/README.md`** - Angular CLI reference
+
+---
+
+## Domain Entities
+
+The platform manages a rich domain model with 50+ entities:
+
+### Core Entities
+
+| Category | Entities |
+|----------|----------|
+| **Users & Clubs** | ApplicationUser, Club, ClubSettings |
+| **Members** | Member, FamilyMember, MemberNote, MemberDocument |
+| **Memberships** | Membership, MembershipType, MembershipDiscount, MembershipFreeze |
+| **Sessions** | Session, SessionBooking, RecurringSchedule, Waitlist |
+| **Events** | Event, EventRegistration |
+| **Competitions** | Competition, Team, Match, Standings |
+| **Financial** | Payment, PaymentPlan, Invoice, Refund, Fee, MemberBalance |
+| **Facilities** | Venue, Facility, Equipment, GuestPass |
+| **Audit** | ConfigurationAuditLog, FinancialAuditLog |
+
+---
+
+## Testing
+
+### Backend Tests
+```bash
+cd TheLeague.Tests
+dotnet test
+```
+
+### Frontend E2E Tests
+```bash
+cd the-league-client
+npx playwright test
+```
+
+### Visual Regression Tests
+```bash
+cd the-league-client
+npx playwright test --project=visual
+```
+
+---
+
+## Supported Sports
+
+The platform is designed to support various sports including:
+
+- Cricket
+- Football (Soccer)
+- Hockey
+- Rugby
+- Tennis
+- Swimming
+- Athletics
+- Golf
+- And more...
+
+Each club can be configured for their specific sport with appropriate terminology and features.
+
 ---
 
 ## License
@@ -624,7 +480,7 @@ This project is proprietary software. All rights reserved.
 
 ---
 
-## Contact
+## Support
 
 For enquiries regarding this project, please contact the development team.
 
